@@ -1,0 +1,9 @@
+import os
+Import(['env'])
+
+# To include a new subdirectory just add to the list.
+current_dir = env.GetDirectoryPathAbsolute([])
+subdirs = env.GetSubDirectories(current_dir)
+
+# Recursive build all
+SConscript([os.path.join(i, 'SConscript') for i in subdirs],exports = ['env'])

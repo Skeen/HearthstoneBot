@@ -1,0 +1,27 @@
+import os
+import zipfile
+
+Import(['env'])
+env = env.Clone()
+
+def zipdir(path, zip):
+    
+    local_dir = os.path.basename(path)
+    for root, dirs, files in os.walk(path):
+        rel_path_new = root.replace("build/Release","HearthstoneBot")
+        for file in files:
+            zip.write(os.path.join(root, file), os.path.join(rel_path_new, file))
+
+def release_zip(target, source, env):
+
+    target_string = str(target[0])
+    source_folder = str(source[0])
+    target_name = os.path.basename(target_string)
+
+    zipf = zipfile.ZipFile(target_string, 'w')
+    zipdir(source_folder, zipf)
+    zipf.close()
+
+    return None
+
+env.Command('HearthstoneBot.zip', '#build/Release', release_zip)

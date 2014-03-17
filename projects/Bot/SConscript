@@ -1,0 +1,28 @@
+Import(['env'])
+env = env.Clone()
+
+# To include new files just add to the list, or Glob("*.cs")
+sources = Glob("src/*.cs")
+
+env['CSC_SEARCH'] = [
+    "projects/Bot/lib",
+    "projects/Bot/runlib"
+]
+
+# note we don't have to add MyAssembly.Common's location to refpaths
+# it will be stored with the call to AddToRefPaths() in the above example
+env['CSC_LIBS'] = [
+    "Assembly-CSharp.dll",
+    "KopiLuaInterface.dll",
+    "UnityEngine.dll"
+]
+
+env['CSC_RUN'] = [
+    "KopiLua.dll",
+    "KopiLuaDll.dll",
+    "KopiLuaInterface.dll",
+    "UnityEngine.dll"
+]
+
+objname = env.GetDirectoryName([])
+env.CLILibrary(objname, sources)

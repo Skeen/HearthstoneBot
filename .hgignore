@@ -1,0 +1,11 @@
+# use glob syntax.
+syntax: glob
+
+build/*
+*~
+*.pyc
+*.swp
+*.dblite
+*.stackdump
+*.sconsign.dblite
+*Assembly-CSharp.dll
