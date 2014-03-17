@@ -1,0 +1,8 @@
+Import(['env'])
+env = env.Clone()
+
+# To include new files just add to the list, or Glob("*.cs")
+sources = Glob("src/*.cs")
+
+objname = env.GetDirectoryName([])
+env.CLIProgram(objname, sources)
