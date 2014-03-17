@@ -31,6 +31,8 @@ namespace HearthstoneBot
                     bool executable_found = File.Exists(hearthstone_executable);
                     if(executable_found)
                     {
+                        // Write the file, and return the string
+                        File.WriteAllText("injector/path", path);
                         return path;
                     }
                     else
