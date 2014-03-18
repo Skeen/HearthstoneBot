@@ -50,7 +50,7 @@ namespace HearthstoneBot
                 return;
             }
             // Delay has been waited out, when we get here
-            Delay(500);
+            //Delay(500);
 
             // Try to run the main loop
 			try
@@ -142,6 +142,49 @@ namespace HearthstoneBot
             }
         }
 
+        private void tournament_mode(bool ranked)
+        {
+            // Don't do this, if we're currently in a game, or matching a game
+            // TODO: Change to an assertion
+            if (SceneMgr.Get().IsInGame() || Network.IsMatching())
+            {
+                return;
+            }
+            // Delay 5 seconds for loading and such
+            // TODO: Smarter delaying
+            Delay(5000);
+
+            Log.log("Joining game in tournament mode, ranked = " + ranked);
+
+            // Get the ID of the current Deck
+            long selectedDeckID = DeckPickerTrayDisplay.Get().GetSelectedDeckID();
+            // We want to play vs other players
+            MissionID missionID = MissionID.MULTIPLAYER_1v1;
+            // Ranked or unranked?
+            GameMode mode = ranked ? GameMode.RANKED_PLAY : GameMode.UNRANKED_PLAY;
+            // Setup up the game
+            GameMgr.Get().SetNextGame(mode, missionID);
+            // Do network join
+            if(ranked)
+            {
+                Network.TrackClient(Network.TrackLevel.LEVEL_INFO,
+                        Network.TrackWhat.TRACK_PLAY_TOURNAMENT_WITH_CUSTOM_DECK);
+                Network.RankedMatch(selectedDeckID);
+            }
+            else
+            {
+                Network.TrackClient(Network.TrackLevel.LEVEL_INFO,
+                        Network.TrackWhat.TRACK_PLAY_CASUAL_WITH_CUSTOM_DECK);
+                Network.UnrankedMatch(selectedDeckID);
+            }
+            // Set status
+            FriendChallengeMgr.Get().OnEnteredMatchmakerQueue();
+            PresenceMgr.Get().SetStatus(new Enum[]
+                    {
+                    PresenceStatus.PLAY_QUEUE
+                    });
+        }
+
         // Play against AI
         private void pratice_mode(bool expert)
         {
@@ -151,15 +194,18 @@ namespace HearthstoneBot
             {
                 return;
             }
+            // Delay 5 seconds for loading and such
+            // TODO: Smarter delaying
+            Delay(5000);
+
+            Log.log("Joining game in practice mode, expert = " + expert);
+
             // Get the ID of the current Deck
             long selectedDeckID = DeckPickerTrayDisplay.Get().GetSelectedDeckID();
             // Get a random mission, of selected difficulty
             MissionID missionID = getRandomAIMissionID(expert);
             // Start up the game
             GameMgr.Get().StartGame(GameMode.PRACTICE, missionID, selectedDeckID);
-            // Delay 5 seconds for loading and such
-            // TODO: Smarter delaying
-            Delay(5000);
         }
 
         // Called when a game is in mulligan state
@@ -248,12 +294,7 @@ namespace HearthstoneBot
                 game_over();
             }
             // If it's not our turn
-            else if (gs.IsLocalPlayerTurn() == false)
-            {
-                // Simply return
-                return;
-            }
-            else
+            else if (gs.IsLocalPlayerTurn() == true)
             {
                 run_ai();
             }
@@ -274,7 +315,6 @@ namespace HearthstoneBot
                 case SceneMgr.Mode.FRIENDLY:
                 case SceneMgr.Mode.DRAFT:
                 case SceneMgr.Mode.CREDITS:
-                case SceneMgr.Mode.TOURNAMENT:  // (Play SubMenu)
                     // Enter MainMenu
                     SceneMgr.Get().SetNextMode(SceneMgr.Mode.HUB);
                     // Delay 5 seconds for loading and such
@@ -292,6 +332,7 @@ namespace HearthstoneBot
 
                 // Login screen
                 case SceneMgr.Mode.LOGIN:
+                    Delay(500);
                     // Click through quests
                     login_mode();
                     break;
@@ -315,6 +356,11 @@ namespace HearthstoneBot
                 case SceneMgr.Mode.PRACTICE:
                     // Play against non-expert AI
                     pratice_mode(false);
+                    break;
+
+                // In Play Sub Menu
+                case SceneMgr.Mode.TOURNAMENT:
+                    tournament_mode(false);
                     break;
             }
         }
