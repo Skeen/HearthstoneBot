@@ -141,7 +141,14 @@ namespace HearthstoneBot
             mutex.ReleaseMutex();
         }
 
-		private void handle_event(string data)
+        private void handle_event(string data)
+        {
+            // Convert entire string to ascii
+            string ascii_data = Utils.EncodeNonAsciiCharacters(data);
+            handle_event_internal(ascii_data);
+        }
+
+		private void handle_event_internal(string data)
 		{
             // Stop the bot
 			if (data.Contains("stop_bot"))
@@ -166,11 +173,8 @@ namespace HearthstoneBot
                 string no_endline = Regex.Replace(path, @"\t|\n|\r|\0", "");
                 string unix_slashes = no_endline.Replace('/', '\\');
 
-                // Convert entire string to ascii
-                string ascii_path = Utils.EncodeNonAsciiCharacters(unix_slashes);
-
                 // Set this within the plugin, also update the log path
-                Plugin.setBotPath(ascii_path);
+                Plugin.setBotPath(unix_slashes);
                 Log.new_log_directory(Plugin.getBothPath() + "logs/");
 			}
             // Reload AI Scripts
