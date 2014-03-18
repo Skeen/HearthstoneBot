@@ -26,6 +26,7 @@ def release(target, source, env):
     copy_files(target_folder, "build/LoaderCommandline")
     copy_files(target_folder, "build/LoaderGUI")
     copy_files(target_folder, "build/Unjector")
+    copy_files(target_folder, "build/AutoBotter")
 
     injector_dir = target_folder + "/injector"
     if not os.path.exists(injector_dir):
@@ -60,6 +61,7 @@ dependencies = [
     "#build/Bot/Bot.dll",
     "#build/Injector/Injector.exe",
     "#build/Unjector/Unjector.exe",
+    "#build/AutoBotter/AutoBotter.exe",
     "#build/LoaderGUI/LoaderGUI.exe",
     "#build/LoaderCommandline/LoaderCommandline.exe"
 ]
