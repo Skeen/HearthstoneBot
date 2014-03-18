@@ -260,6 +260,7 @@ namespace HearthstoneBot
             Size = new Size(WIDTH, HEIGHT);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
+            TopMost = true;
 
             Menu = setupMainMenu();
 
