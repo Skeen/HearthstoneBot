@@ -11,8 +11,8 @@ namespace HearthstoneBot
 {
 	public class Plugin : MonoBehaviour
 	{
-        private static string bot_path = null;
-		private static bool running = false;
+        private static volatile string bot_path = null;
+		private static volatile bool running = false;
 
         private static ServerSocket server_socket = null;
         private static AIBot ai_bot = null;

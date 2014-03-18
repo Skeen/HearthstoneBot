@@ -20,9 +20,15 @@ namespace HearthstoneBot
         private const Int32 SERVER_PORT = 8111;
 
         // Work variables
-        private Mutex mutex;
-		private Thread thread;
-        private List<string> events;
+        private readonly Mutex mutex;
+		private readonly Thread thread;
+        private volatile List<string> events;
+
+        // TODO: Make these local variables and fix the stop function
+        //          This is indeed a hack, but it works!
+        private volatile TcpListener socket = null;
+        private volatile TcpClient client = null;
+        private volatile NetworkStream network_stream = null;
 
         public ServerSocket()
         {
@@ -36,7 +42,15 @@ namespace HearthstoneBot
 
         public void stop()
         {
-			thread.Abort();
+            // TODO: See the todo at the variables
+            if(thread != null)
+                thread.Abort();
+            if(network_stream != null)
+                network_stream.Close();
+            if(client != null)
+                client.Close();
+            if(socket != null)
+                socket.Stop();
         }
 
         public void start()
@@ -47,7 +61,6 @@ namespace HearthstoneBot
 		private void run()
 		{
             // Open a server socket
-            TcpListener socket = null;
             try
             {
                 socket = new TcpListener(IP, SERVER_PORT);    
@@ -67,11 +80,11 @@ namespace HearthstoneBot
 				while (true)
 				{
                     // Wait for a client to connect
-		            TcpClient client = socket.AcceptTcpClient();
+		            client = socket.AcceptTcpClient();
                     Log.say("External connection");
 
                     // Open a stream to the client
-                    NetworkStream network_stream = client.GetStream();
+                    network_stream = client.GetStream();
                     // Assert that we can read the stream
                     if(network_stream.CanRead == false)
                     {

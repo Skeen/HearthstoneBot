@@ -7,6 +7,8 @@ using System.Net;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 
+using System.Threading;
+
 namespace HearthstoneBot
 {
     public class AIBot
@@ -326,8 +328,13 @@ namespace HearthstoneBot
                 case SceneMgr.Mode.INVALID:
                 case SceneMgr.Mode.FATAL_ERROR:
                 case SceneMgr.Mode.RESET:
-                    Log.say("Error, in AI.tick()");
-                    Plugin.setRunning(false);
+                    Log.say("Fatal Error, in AI.tick()");
+                    Log.say("Force closing game!");
+                    Plugin.destroy();
+                    Thread.Sleep(2500);
+                    // Kill it the bad way
+                    Environment.FailFast(null);
+                    //Plugin.setRunning(false);
                     break;
 
                 // Login screen
