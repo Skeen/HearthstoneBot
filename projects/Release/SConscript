@@ -1,0 +1,67 @@
+import os
+import datetime
+import shutil
+    
+Import(['env'])
+env = env.Clone()
+
+def copy_files(target_folder, source_folder):
+    source_files = [ f for f in os.listdir(source_folder) ]
+    
+    for source_file in source_files:
+        source_file_path = source_folder + '/' + source_file
+        if os.path.isfile(source_file_path):
+            target_file_path = target_folder + '/' + source_file
+            shutil.copy2(source_file_path, target_file_path)
+
+def create_file(file_path, file_contents):
+    f = open(file_path, 'w+')
+    f.write(file_contents)
+    f.close()
+
+def release(target, source, env):
+    target_string = str(target[0])
+    target_folder = os.path.dirname(target_string)
+
+    copy_files(target_folder, "build/LoaderCommandline")
+    copy_files(target_folder, "build/LoaderGUI")
+    copy_files(target_folder, "build/Unjector")
+
+    injector_dir = target_folder + "/injector"
+    if not os.path.exists(injector_dir):
+        os.makedirs(injector_dir)
+
+    copy_files(injector_dir, "build/Injector")
+#    copy_files(injector_dir, "build/Loader")
+
+#    plugin_dir = target_folder + "/plugins"
+#    if not os.path.exists(plugin_dir):
+#        os.makedirs(plugin_dir)
+        
+    copy_files(injector_dir, "build/Bot")
+
+    script_dir = target_folder + "/LuaScripts"
+    if not os.path.exists(script_dir):
+        os.makedirs(script_dir)
+    copy_files(script_dir, "projects/Release/LuaScripts")
+    create_file(script_dir + "/DO_NOT_MODIFY", "These files are overridden at each rebuild")
+
+    log_folder = target_folder + "/logs"
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
+    create_file(log_folder + "/DO_NOT_ERASE", "This folder is required to run the bot")
+
+    # Compile time file
+    #create_file(target_string, "Compiled at: " + str(datetime.datetime.now()))
+
+    return None
+
+dependencies = [
+    "#build/Bot/Bot.dll",
+    "#build/Injector/Injector.exe",
+    "#build/Unjector/Unjector.exe",
+    "#build/LoaderGUI/LoaderGUI.exe",
+    "#build/LoaderCommandline/LoaderCommandline.exe"
+]
+
+env.Command('release', dependencies, release)
