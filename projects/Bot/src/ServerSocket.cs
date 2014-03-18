@@ -20,6 +20,7 @@ namespace HearthstoneBot
         private const Int32 SERVER_PORT = 8111;
 
         // Work variables
+        private Mutex mutex;
 		private Thread thread;
         private List<string> events;
 
@@ -29,6 +30,8 @@ namespace HearthstoneBot
 
             events = new List<string>();
             thread = new Thread(new ThreadStart(run));
+
+            mutex = new Mutex();
         }
 
         public void stop()
@@ -86,8 +89,12 @@ namespace HearthstoneBot
                     string command = sr.ReadToEnd();
                     // Report that we've got a command
                     Log.log("Got network command");
+                    // Wait until it is safe to enter.
+                    mutex.WaitOne();
                     // Append command to lazy list
                     events.Add(command);
+                    // Release the Mutex.
+                    mutex.ReleaseMutex();
 
                     // At this point, we're done;
                     // Close the network stream
@@ -108,6 +115,8 @@ namespace HearthstoneBot
 
         public void handle_events()
         {
+            // Wait until it is safe to enter.
+            mutex.WaitOne();
             // Handle all events passed, since last visit
             foreach(string evnt in events)
             {
@@ -115,6 +124,8 @@ namespace HearthstoneBot
             }
             // Remove all events for list
             events.Clear();
+            // Release the Mutex.
+            mutex.ReleaseMutex();
         }
 
 		private void handle_event(string data)
