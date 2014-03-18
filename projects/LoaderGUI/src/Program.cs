@@ -8,8 +8,8 @@ namespace HearthstoneBot
 {
     public class GUI : Form
     {
-        private const int WIDTH = 270;
-        private const int HEIGHT = 150;
+        private const int WIDTH = 320;
+        private const int HEIGHT = 170;
 
         private const string log_directory = "logs/";
         // Default log name
@@ -249,7 +249,7 @@ namespace HearthstoneBot
             tb.Parent = this;
             tb.Text = getHSPath();
             tb.Location = new Point(label1.Width, 0);
-            tb.Size = new Size(WIDTH-label1.Width, 30);
+            tb.Size = new Size(WIDTH-label1.Width, label1.Height);
             tb.Multiline = false;
             tb.TextChanged += new EventHandler(onKeyUpEvent);
         }
@@ -266,7 +266,9 @@ namespace HearthstoneBot
             HearthstonePathSetter();
 
             Panel panel = new Panel();
-            panel.Height = 60;
+            panel.AutoSize = true;
+            panel.Margin = new Padding(0);
+            panel.Padding = new Padding(0);
             panel.Dock = DockStyle.Bottom;
             panel.Parent = this;
 
@@ -276,32 +278,35 @@ namespace HearthstoneBot
             btn1.Location = new Point(0, 0);
             btn1.Anchor = AnchorStyles.Right;
             btn1.Click += new EventHandler(inject);
+            
+            int total_spacing = WIDTH - 3*btn1.Width;
+            int one_spacing = total_spacing / 3;
 
             Button btn2 = new Button();
             btn2.Text = "Regen";
             btn2.Parent = panel;
-            btn2.Location = new Point(btn1.Width+10, 0);
+            btn2.Location = new Point(btn1.Location.X + btn1.Width + one_spacing, 0);
             btn2.Anchor = AnchorStyles.Right;
             btn2.Click += new EventHandler(regen_inject);
             
             Button btn3 = new Button();
             btn3.Text = "Reload";
             btn3.Parent = panel;
-            btn3.Location = new Point(btn1.Width + btn2.Width + 20, 0);
+            btn3.Location = new Point(btn2.Location.X + btn2.Width + one_spacing, 0);
             btn3.Anchor = AnchorStyles.Right;
             btn3.Click += new EventHandler(reload_scripts);
             
             Button btn4 = new Button();
             btn4.Text = "Start bot";
             btn4.Parent = panel;
-            btn4.Location = new Point(0, 30);
+            btn4.Location = new Point(0, 60);
             btn4.Anchor = AnchorStyles.Right;
             btn4.Click += new EventHandler(startbot);
             
             Button btn5 = new Button();
             btn5.Text = "Stop bot";
             btn5.Parent = panel;
-            btn5.Location = new Point(btn4.Width + 10, 30);
+            btn5.Location = new Point(btn4.Location.X + btn4.Width + one_spacing, 60);
             btn5.Anchor = AnchorStyles.Right;
             btn5.Click += new EventHandler(stopbot);
             
