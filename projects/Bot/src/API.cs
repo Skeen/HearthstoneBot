@@ -72,13 +72,13 @@ namespace HearthstoneBot
             }
             catch(LuaException e)
             {
-                Log.log("EXCEPTION");
-                Log.log(e.ToString());
-                Log.log(e.Message);
+                Log.error("EXCEPTION");
+                Log.error(e.ToString());
+                Log.error(e.Message);
             }
             catch(Exception e)
             {
-                Log.log(e.ToString());
+                Log.error(e.ToString());
             }
             Log.log("Scripts loaded constructed");
         }
@@ -236,18 +236,18 @@ namespace HearthstoneBot
             }
             catch(LuaException e)
             {
-                Log.log("EXCEPTION");
-                Log.log(e.ToString());
-                Log.log(e.Message);
+                Log.error("EXCEPTION");
+                Log.error(e.ToString());
+                Log.error(e.Message);
             }
             catch(Exception e)
             {
-                Log.log(e.ToString());
+                Log.error(e.ToString());
             }
             return false;
         }
 
-        public List<Card> mulligan()
+        public List<Card> mulligan(List<Card> cards)
         {
             try
             {
@@ -257,10 +257,11 @@ namespace HearthstoneBot
                     Log.log("Lua function not found!");
                     return null;
                 }
-                List<Card> cards = getOurPlayer().GetHandZone().GetCards();
+                
                 LuaTable argument = __csharp_card_transfer(cards);
 
                 object[] args = f.Call(argument);
+                
                 LuaTable replace = args[0] as LuaTable;
 
                 if(replace != null)
@@ -272,13 +273,13 @@ namespace HearthstoneBot
             }
             catch(LuaException e)
             {
-                Log.log("EXCEPTION");
-                Log.log(e.ToString());
-                Log.log(e.Message);
+                Log.error("EXCEPTION");
+                Log.error(e.ToString());
+                Log.error(e.Message);
             }
             catch(Exception e)
             {
-                Log.log(e.ToString());
+                Log.error(e.ToString());
             }
             return null;
         }

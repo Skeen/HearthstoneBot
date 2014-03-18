@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Generic;
 
 using System.Threading;
+using System.Reflection;
 
 namespace HearthstoneBot
 {
@@ -110,21 +111,32 @@ namespace HearthstoneBot
 		{
             // Check that the button exists and is enabled
 			if (GameState.Get().IsMulliganManagerActive() == false ||
+                MulliganManager.Get() == null /*||
                 MulliganManager.Get().GetMulliganButton() == null ||
-                MulliganManager.Get().GetMulliganButton().IsEnabled() == false)
+                MulliganManager.Get().GetMulliganButton().IsEnabled() == false*/)
 			{
 				return false;
 			}
+            
+            // Get hand cards
+            List<Card> cards = API.getOurPlayer().GetHandZone().GetCards().ToList<Card>();
             // Ask the AI scripting system, to figure which cards to replace
-            List<Card> replace = api.mulligan();
+            List<Card> replace = api.mulligan(cards);
+            if(replace == null)
+            {
+                return false;
+            }
+
             // Toggle them as replaced
             foreach(Card current in replace)
             {
                 MulliganManager.Get().ToggleHoldState(current);
             }
+
             // End mulligan
             MulliganManager.Get().EndMulligan();
 			API.end_turn();
+
             // Report progress
 			Log.say("Mulligan Ended : " + replace.Count + " cards changed");
             // Delay 5 seconds
@@ -144,8 +156,14 @@ namespace HearthstoneBot
             }
         }
 
+        bool just_joined = false;
+
+        // Found at: DeckPickerTrayDisplay search for RankedMatch
         private void tournament_mode(bool ranked)
         {
+            if (just_joined)
+                return;
+
             // Don't do this, if we're currently in a game, or matching a game
             // TODO: Change to an assertion
             if (SceneMgr.Get().IsInGame() || Network.IsMatching())
@@ -181,15 +199,18 @@ namespace HearthstoneBot
             }
             // Set status
             FriendChallengeMgr.Get().OnEnteredMatchmakerQueue();
-            PresenceMgr.Get().SetStatus(new Enum[]
-                    {
-                    PresenceStatus.PLAY_QUEUE
-                    });
+            GameMgr.Get().UpdatePresence();
+
+            just_joined = true;
         }
 
         // Play against AI
+        // Found at: PracticePickerTrayDisplay search for StartGame
         private void pratice_mode(bool expert)
         {
+            if (just_joined)
+                return;
+
             // Don't do this, if we're currently in a game
             // TODO: Change to an assertion
             if (SceneMgr.Get().IsInGame())
@@ -208,13 +229,18 @@ namespace HearthstoneBot
             MissionID missionID = getRandomAIMissionID(expert);
             // Start up the game
             GameMgr.Get().StartGame(GameMode.PRACTICE, missionID, selectedDeckID);
+            // Set status
+            GameMgr.Get().UpdatePresence();
+            
+            just_joined = true;
         }
 
         // Called when a game is in mulligan state
         private void do_mulligan()
         {
-            // Delay 2 seconds
-            Delay(2000);
+            // Delay 10 seconds
+            Delay(5000);
+
             try
             {
                 mulligan();
@@ -251,7 +277,9 @@ namespace HearthstoneBot
                 // Click through end screen info (rewards, and such)
                 if (EndGameScreen.Get() != null)
                 {
-                    EndGameScreen.Get().ContinueEvents();
+                    EndGameScreen.Get().m_hitbox.TriggerRelease();
+
+                    //EndGameScreen.Get().ContinueEvents();
                 }
             }
             catch(Exception e)
@@ -331,7 +359,6 @@ namespace HearthstoneBot
                     Log.say("Fatal Error, in AI.tick()");
                     Log.say("Force closing game!");
                     Plugin.destroy();
-                    Thread.Sleep(2500);
                     // Kill it the bad way
                     Environment.FailFast(null);
                     //Plugin.setRunning(false);
@@ -347,7 +374,7 @@ namespace HearthstoneBot
                 // Main Menu
                 case SceneMgr.Mode.HUB:
                     // Enter Pratice Mode
-                    SceneMgr.Get().SetNextMode(SceneMgr.Mode.PRACTICE);
+                    SceneMgr.Get().SetNextMode(SceneMgr.Mode.TOURNAMENT);
                     // Delay 5 seconds for loading and such
                     // TODO: Smarter delaying
                     Delay(5000);
@@ -357,6 +384,7 @@ namespace HearthstoneBot
                 case SceneMgr.Mode.GAMEPLAY:
                     // Handle Gamplay
                     gameplay_mode();
+                    just_joined = false;
                     break; 
 
                 // In Pratice Sub Menu
