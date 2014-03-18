@@ -8,8 +8,8 @@ namespace HearthstoneBot
 {
     public class GUI : Form
     {
-        private const int WIDTH = 270;
-        private const int HEIGHT = 150;
+        private const int WIDTH = 370;
+        private const int HEIGHT = 180;
 
         private const string log_directory = "logs/";
         // Default log name
