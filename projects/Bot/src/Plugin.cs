@@ -35,12 +35,17 @@ namespace HearthstoneBot
 			Log.log("Bot loaded, accepting commands!");
         }
 
-		private void OnDestroy()
-		{
+        public static void destroy()
+        {
             // Announce that Hearthstone is closing
 			Log.log("Hearthstone closing");
             // Shutdown the server socket
             server_socket.stop();
+        }
+
+		private void OnDestroy()
+		{
+            destroy();
 		}
 
 		public void Start()
