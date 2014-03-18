@@ -154,9 +154,15 @@ namespace HearthstoneBot
 
             proc.StartInfo.UseShellExecute = false;
             proc.StartInfo.CreateNoWindow = true;
+            proc.StartInfo.RedirectStandardOutput = true;
             
+            log("Starting: LoaderCommandline.exe " + argument);
+
             proc.Start();
             proc.WaitForExit();
+
+            string result = proc.StandardOutput.ReadToEnd();
+            log("Output: " + result);
 
             return (proc.ExitCode != 0);
         }
