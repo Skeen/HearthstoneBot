@@ -82,6 +82,8 @@ namespace HearthstoneBot
                 // Write the result to a new dll file
 				string assembly_csharp = "Assembly-CSharp.dll";
 				assembly_csharp_original_def.Write(assembly_csharp);
+                // Let the user know
+                Console.WriteLine("Success!");
                 // Exit gracefully
 				Environment.Exit(0);
 			}
