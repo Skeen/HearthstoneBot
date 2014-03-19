@@ -237,19 +237,21 @@ namespace HearthstoneBot
             }
         }
         
-        private void HearthstonePathSetter()
+        private void HearthstonePathSetter(Panel parent)
         {
+            FlowLayoutPanel panel = new FlowLayoutPanel();
+            panel.AutoSize = true;
+            panel.Parent = parent;
+
             Label label1 = new Label();
             label1.Text = "Hearthstone Path: ";
             label1.AutoSize = true;
-            label1.Location = new Point(0, 2);
-            label1.Parent = this;
+            label1.Parent = panel;
 
             TextBox tb = new TextBox();
-            tb.Parent = this;
+            tb.Parent = panel;
             tb.Text = getHSPath();
-            tb.Location = new Point(label1.Width, 0);
-            tb.Size = new Size(WIDTH-label1.Width, label1.Height);
+            tb.Size = new Size(Width-label1.Width, label1.Height);
             tb.Multiline = false;
             tb.TextChanged += new EventHandler(onKeyUpEvent);
         }
@@ -258,25 +260,27 @@ namespace HearthstoneBot
         {
             Text = "LoaderGUI";
             Size = new Size(WIDTH, HEIGHT);
+            //AutoSize = true;
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             TopMost = true;
 
             Menu = setupMainMenu();
 
-            HearthstonePathSetter();
-
-            Panel panel = new Panel();
+            FlowLayoutPanel panel = new FlowLayoutPanel();
             panel.AutoSize = true;
-            panel.Margin = new Padding(0);
-            panel.Padding = new Padding(0);
-            panel.Dock = DockStyle.Bottom;
             panel.Parent = this;
+            panel.FlowDirection = FlowDirection.TopDown;
+
+            HearthstonePathSetter(panel);
+
+            FlowLayoutPanel buttons1 = new FlowLayoutPanel();
+            buttons1.AutoSize = true;
+            buttons1.Parent = panel;
 
             Button btn1 = new Button();
             btn1.Text = "Inject";
-            btn1.Parent = panel;
-            btn1.Location = new Point(0, 0);
+            btn1.Parent = buttons1;
             btn1.Anchor = AnchorStyles.Right;
             btn1.Click += new EventHandler(inject);
             
@@ -285,29 +289,29 @@ namespace HearthstoneBot
 
             Button btn2 = new Button();
             btn2.Text = "Regen";
-            btn2.Parent = panel;
-            btn2.Location = new Point(btn1.Location.X + btn1.Width + one_spacing, 0);
+            btn2.Parent = buttons1;
             btn2.Anchor = AnchorStyles.Right;
             btn2.Click += new EventHandler(regen_inject);
             
             Button btn3 = new Button();
             btn3.Text = "Reload";
-            btn3.Parent = panel;
-            btn3.Location = new Point(btn2.Location.X + btn2.Width + one_spacing, 0);
+            btn3.Parent = buttons1;
             btn3.Anchor = AnchorStyles.Right;
             btn3.Click += new EventHandler(reload_scripts);
+
+            FlowLayoutPanel buttons2 = new FlowLayoutPanel();
+            buttons2.AutoSize = true;
+            buttons2.Parent = panel;
             
             Button btn4 = new Button();
             btn4.Text = "Start bot";
-            btn4.Parent = panel;
-            btn4.Location = new Point(0, 60);
+            btn4.Parent = buttons2;
             btn4.Anchor = AnchorStyles.Right;
             btn4.Click += new EventHandler(startbot);
             
             Button btn5 = new Button();
             btn5.Text = "Stop bot";
-            btn5.Parent = panel;
-            btn5.Location = new Point(btn4.Location.X + btn4.Width + one_spacing, 60);
+            btn5.Parent = buttons2;
             btn5.Anchor = AnchorStyles.Right;
             btn5.Click += new EventHandler(stopbot);
             
