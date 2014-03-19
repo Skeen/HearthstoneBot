@@ -8,7 +8,7 @@ namespace HearthstoneBot
 {
     public class GUI : Form
     {
-        private const int WIDTH = 320;
+        private const int WIDTH = 340;
         private const int HEIGHT = 170;
 
         private const string log_directory = "logs/";
@@ -212,7 +212,18 @@ namespace HearthstoneBot
         private void startbot(object sender, EventArgs e)
         {
             setStatus("Starting bot");
-            bool b = loader_commandline("startbot");
+            bool b = false;
+
+            string selectedItem = (string) cmb.SelectedItem;
+            if(selectedItem == null)
+            {
+                b = loader_commandline("startbot");
+            }
+            else
+            {
+                b = loader_commandline("--set_mode=" + selectedItem + " startbot");
+            }
+
             if(b)
             {
                 setStatus("Error during startbot");
@@ -256,6 +267,8 @@ namespace HearthstoneBot
             tb.TextChanged += new EventHandler(onKeyUpEvent);
         }
 
+        private ComboBox cmb = null;
+
         public GUI()
         {
             Text = "LoaderGUI";
@@ -284,9 +297,6 @@ namespace HearthstoneBot
             btn1.Anchor = AnchorStyles.Right;
             btn1.Click += new EventHandler(inject);
             
-            int total_spacing = WIDTH - 3*btn1.Width;
-            int one_spacing = total_spacing / 3;
-
             Button btn2 = new Button();
             btn2.Text = "Regen";
             btn2.Parent = buttons1;
@@ -315,6 +325,19 @@ namespace HearthstoneBot
             btn5.Anchor = AnchorStyles.Right;
             btn5.Click += new EventHandler(stopbot);
             
+            cmb = new ComboBox();
+            cmb.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmb.Parent = buttons2;
+            cmb.Anchor = AnchorStyles.Right;
+
+            string[] game_modes =
+                new string[]{"TOURNAMENT_RANKED", "TOURNAMENT_UNRANKED",
+                             "PRATICE_NORMAL",    "PRATICE_EXPERT"};
+
+            cmb.Items.AddRange(game_modes);
+            cmb.Name = "GameMode";
+            cmb.Size = new Size(btn5.Width*2, btn5.Height);
+
             // Create status bar
             sb = new StatusBar();
             sb.Parent = this;
