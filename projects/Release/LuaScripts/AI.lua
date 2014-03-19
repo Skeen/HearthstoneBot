@@ -171,36 +171,40 @@ end
 -- Do AI, returns nothing, takes nothing
 turn_start_function = function()
 
-    print_to_log("AI started")
+    -- Try to run the AI 3 times, note this is a hacky fix
+    -- TODO: Do it the right way
+    for i=0,3 do
+        print_to_log("AI started" .. i)
 
-    --use_hero_power()
+        --use_hero_power()
 
-    --[[
-    local succes = use_hero_power()
-    print_to_log("after hero power")
-    if succes == false then
+        --[[
+        local succes = use_hero_power()
+        print_to_log("after hero power")
+        if succes == false then
         print_to_log("FAILED")
-    end
-    --]]
-
-    local minion_thrown = true
-    while minion_thrown do
-        if num_battlefield_minions() >= 7 then
-            minion_thrown = false
-        else
-            --print_to_log("Throwing minion")
-            minion_thrown = throw_random_minion()
         end
+        --]]
+
+        local minion_thrown = true
+        while minion_thrown do
+            if num_battlefield_minions() >= 7 then
+                minion_thrown = false
+            else
+                --print_to_log("Throwing minion")
+                minion_thrown = throw_random_minion()
+            end
+        end
+        print_to_log("throw_random_minion done");
+
+        -- Keep killing tanks, while we're able to
+        while eliminate_tanks() do
+        end
+
+        nuke_hero();
+
+        print_to_log("AI ended" .. i);
     end
-    print_to_log("throw_random_minion done");
-
-    -- Keep killing tanks, while we're able to
-    while eliminate_tanks() do
-    end
-
-    nuke_hero();
-
-    print_to_log("AI ended");
     end_turn();
     print_to_log("End of Turn Called");
 end
