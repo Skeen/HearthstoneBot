@@ -14,6 +14,22 @@ namespace HearthstoneBot
 {
     public class AIBot
     {
+        public enum Mode
+        {
+            TOURNAMENT_RANKED,
+            TOURNAMENT_UNRANKED,
+            PRATICE_NORMAL,
+            PRATICE_EXPERT
+        };
+
+        public void setMode(Mode m)
+        {
+            Log.log("GameMode changed to : " + m.ToString());
+            game_mode = m;
+        }
+
+        private volatile Mode game_mode = Mode.TOURNAMENT_RANKED;
+
         private API api = null;
         private readonly System.Random random = null;
         
@@ -173,6 +189,15 @@ namespace HearthstoneBot
             // Delay 5 seconds for loading and such
             // TODO: Smarter delaying
             Delay(5000);
+
+            // If we're not set to the right mode, now is the time to do so
+            // Note; This does not update the GUI, only the internal state
+            bool is_ranked = Options.Get().GetBool(Option.IN_RANKED_PLAY_MODE);
+            if(is_ranked != ranked)
+            {
+                Options.Get().SetBool(Option.IN_RANKED_PLAY_MODE, ranked);
+                return;
+            }
 
             Log.log("Joining game in tournament mode, ranked = " + ranked);
 
@@ -334,9 +359,9 @@ namespace HearthstoneBot
         private void update()
         {
             // Get current scene mode
-            SceneMgr.Mode mode = SceneMgr.Get().GetMode();
+            SceneMgr.Mode scene_mode = SceneMgr.Get().GetMode();
             // Switch upon the mode
-            switch (mode)
+            switch (scene_mode)
             {
                 // Unsupported modes
                 case SceneMgr.Mode.STARTUP:
@@ -356,8 +381,8 @@ namespace HearthstoneBot
                 case SceneMgr.Mode.INVALID:
                 case SceneMgr.Mode.FATAL_ERROR:
                 case SceneMgr.Mode.RESET:
-                    Log.say("Fatal Error, in AI.tick()");
-                    Log.say("Force closing game!");
+                    Log.say("Fatal Error, in AI.tick()", true);
+                    Log.say("Force closing game!", true);
                     Plugin.destroy();
                     // Kill it the bad way
                     Environment.FailFast(null);
@@ -373,8 +398,25 @@ namespace HearthstoneBot
 
                 // Main Menu
                 case SceneMgr.Mode.HUB:
-                    // Enter Pratice Mode
-                    SceneMgr.Get().SetNextMode(SceneMgr.Mode.TOURNAMENT);
+                    switch(game_mode)
+                    {
+                        case Mode.PRATICE_NORMAL:
+                        case Mode.PRATICE_EXPERT:
+                            // Enter Pratice Mode
+                            SceneMgr.Get().SetNextMode(SceneMgr.Mode.PRACTICE);
+                            break;
+
+                        case Mode.TOURNAMENT_RANKED:
+                        case Mode.TOURNAMENT_UNRANKED:
+                            // Enter Turnament Mode
+                            SceneMgr.Get().SetNextMode(SceneMgr.Mode.TOURNAMENT);
+                            Tournament.Get().NotifyOfBoxTransitionStart();
+                            break;
+
+                        default:
+                            Log.say("Unknown Game Mode!", true);
+                            return;
+                    }
                     // Delay 5 seconds for loading and such
                     // TODO: Smarter delaying
                     Delay(5000);
@@ -389,14 +431,65 @@ namespace HearthstoneBot
 
                 // In Pratice Sub Menu
                 case SceneMgr.Mode.PRACTICE:
-                    // Play against non-expert AI
-                    pratice_mode(false);
+                    bool expert = false;
+                    switch(game_mode)
+                    {
+                        case Mode.PRATICE_NORMAL:
+                            expert = false;
+                            break;
+
+                        case Mode.PRATICE_EXPERT:
+                            expert = true;
+                            break;
+
+                        case Mode.TOURNAMENT_RANKED:
+                        case Mode.TOURNAMENT_UNRANKED:
+                            // Leave to the Hub
+                            Log.say("Inside wrong sub-menu!");
+                            SceneMgr.Get().SetNextMode(SceneMgr.Mode.HUB);
+                            return;
+
+                        default:
+                            Log.say("Unknown Game Mode!", true);
+                            return;
+                    }
+
+                    // Play against AI
+                    pratice_mode(expert);
                     break;
 
                 // In Play Sub Menu
                 case SceneMgr.Mode.TOURNAMENT:
-                    tournament_mode(false);
+                    bool ranked = false;
+                    switch(game_mode)
+                    {
+                        case Mode.PRATICE_NORMAL:
+                        case Mode.PRATICE_EXPERT:
+                            // Leave to the Hub
+                            Log.say("Inside wrong sub-menu!");
+                            SceneMgr.Get().SetNextMode(SceneMgr.Mode.HUB);
+                            return;
+
+                        case Mode.TOURNAMENT_RANKED:
+                            ranked = true;
+                            break;
+
+                        case Mode.TOURNAMENT_UNRANKED:
+                            ranked = false;
+                            break;
+
+                        default:
+                            Log.say("Unknown Game Mode!", true);
+                            return;
+                    }
+
+                    // Play against humans (or bots)
+                    tournament_mode(ranked);
                     break;
+
+                default:
+                    Log.say("Unknown SceneMgr State!", true);
+                    return;
             }
         }
     }

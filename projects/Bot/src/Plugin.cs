@@ -122,5 +122,10 @@ namespace HearthstoneBot
             }
             return bot_path;
         }
+
+        public static void setMode(AIBot.Mode mode)
+        {
+            ai_bot.setMode(mode);
+        }
     }
 }

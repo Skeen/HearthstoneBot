@@ -92,11 +92,13 @@ namespace HearthstoneBot
             // Parsing output variables
             bool print_help = false;
             string set_path_string = null;
+            string mode = null;
 
             // Parsing options
             OptionSet option_set = new OptionSet()  
                 .Add("?|help|h", "Prints out the options.", v => print_help = v != null)  
                 .Add("set_hs_path=", "Set the path of the hearthstone folder", (string v) => set_path_string = v)  
+                .Add("set_mode=", "Set the mode of the bot (to be used in combination with startbot", (string v) => mode = v);
                 ;  
 
             List<string> extra = null;
@@ -134,35 +136,38 @@ namespace HearthstoneBot
                 // Validate that the hearthstone folder is indeed legit
                 validate_hearthstone_folder(hearthstone_path);
 
-                switch(extra[0])
+                foreach(string command in extra)
                 {
-                    case "inject":
-                        inject(hearthstone_path, extra);
-                        break;
+                    switch(command)
+                    {
+                        case "inject":
+                            inject(hearthstone_path);
+                            break;
 
-                    case "regen_inject":
-                        create_injection_file(hearthstone_path, true);
-                        break;
-                    
-                    case "status":
-                        injection_status(hearthstone_path, extra);
-                        break;
+                        case "regen_inject":
+                            create_injection_file(hearthstone_path, true);
+                            break;
 
-                    case "about":
-                        print_about();
-                        break;
+                        case "status":
+                            injection_status(hearthstone_path);
+                            break;
 
-                    case "startbot":
-                        startbot(extra);
-                        break;
+                        case "about":
+                            print_about();
+                            break;
 
-                    case "stopbot":
-                        stopbot(extra);
-                        break;
+                        case "startbot":
+                            startbot(mode);
+                            break;
 
-                    case "reload":
-                        reload_scripts(extra);
-                        break;
+                        case "stopbot":
+                            stopbot();
+                            break;
+
+                        case "reload":
+                            reload_scripts();
+                            break;
+                    }
                 }
             }
 		}
@@ -205,16 +210,20 @@ namespace HearthstoneBot
             network_stream.Close();
         }
 
-        static void startbot(List<string> args)
+        static void startbot(string mode)
         {
             send_bot_path();
+            if(mode != null)
+            {
+                send_bot_command("mode=" + mode);
+            }
             send_bot_command("start_bot");
         }
-        static void stopbot(List<string> args)
+        static void stopbot()
         {
             send_bot_command("stop_bot");
         }
-        static void reload_scripts(List<string> args)
+        static void reload_scripts()
         {
             send_bot_command("reload_scripts");
         }
@@ -225,7 +234,7 @@ namespace HearthstoneBot
             Console.WriteLine("\tSovende@gmail.com");
         }
 
-        static void injection_status(string hearthstone_path, List<string> args)
+        static void injection_status(string hearthstone_path)
         {
             string modified_assembly_csharp = "injector/Assembly-CSharp.dll";
             // If the modified assembly charp file, was not found, we'll create it
@@ -341,7 +350,7 @@ namespace HearthstoneBot
             }
         }
 
-        static void inject(string hearthstone_path, List<string> args)
+        static void inject(string hearthstone_path)
         {
             string modified_assembly_csharp = "injector/Assembly-CSharp.dll";
             // If the modified assembly charp file, was not found, we'll create it

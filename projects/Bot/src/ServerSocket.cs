@@ -158,7 +158,6 @@ namespace HearthstoneBot
             // Start the bot
             else if (data.Contains("start_bot"))
 			{
-                Plugin.loadAIBot();
                 Plugin.setRunning(true);
 			}
             // Set bot path
@@ -176,12 +175,37 @@ namespace HearthstoneBot
                 // Set this within the plugin, also update the log path
                 Plugin.setBotPath(unix_slashes);
                 Log.new_log_directory(Plugin.getBothPath() + "logs/");
+                
+                // Reload the bot, with the new path
+                Plugin.loadAIBot();
 			}
             // Reload AI Scripts
             else if (data.Contains("reload_scripts"))
 			{
                 Plugin.ReloadScripts();
 			}
+            else if (data.Contains("mode="))
+            {
+                // Find the index of the '='
+                int index_of_equals = data.IndexOf('=');
+                // Find the path substring
+                string actual_mode = data.Substring(index_of_equals+1);
+                // Find the corresponding mode
+                AIBot.Mode mode = (AIBot.Mode) Enum.Parse(typeof(AIBot.Mode), actual_mode);        
+                if (Enum.IsDefined(typeof(AIBot.Mode), mode))
+                {
+                    Plugin.setMode(mode);
+                }
+                else
+                {
+                    Log.error("While trying to set mode:");
+                    Log.error("Unknown mode = " + actual_mode);
+                }
+            }
+            else
+            {
+                Log.error("Unknown network command : " + data);
+            }
 		}
     }
 }
