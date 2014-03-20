@@ -178,7 +178,6 @@ local throw_random_minion = function()
     return false
 end
 
-
 -- Only for non-targeted
 -- TODO: Add a check for these heroes
 -- NOTE: Will require an extension of the Lua API
@@ -200,6 +199,33 @@ local use_hero_power = function()
 end
 --]]
 
+local non_target_spell = function()
+    local cards_on_hand = GetCards(Hand)
+    local spell_cards = {}
+    -- Find all minion cards
+    for i,card in ipairs(cards_on_hand) do
+        local entity = ConvertCardToEntity(card)
+        local is_minion = IsSpell(entity)
+        if is_minion then
+            table.insert(spell_cards, card)
+        end
+    end
+
+    print_to_log(#spell_cards .. " spells on hand")
+    local avaiable_crystals = GetCrystals(OurHero)
+
+    for i,card in ipairs(spell_cards) do
+        local entity = ConvertCardToEntity(card)
+        local card_cost = GetCost(entity)
+
+        if(card_cost <= avaiable_crystals) then
+            DropCard(card)
+            return true
+        end
+    end
+    return false
+end
+
 -- Do AI, returns nothing, takes nothing
 turn_start_function = function()
 
@@ -208,26 +234,13 @@ turn_start_function = function()
     for i=0,3 do
         print_to_log("AI started" .. i)
 
-        --use_hero_power()
-
-        --[[
-        local succes = use_hero_power()
-        print_to_log("after hero power")
-        if succes == false then
-        print_to_log("FAILED")
+        -- Use all spells / secrets
+        while non_target_spell() do
         end
-        --]]
-
-        local minion_thrown = true
-        while minion_thrown do
-            if num_battlefield_minions() >= 7 then
-                minion_thrown = false
-            else
-                --print_to_log("Throwing minion")
-                minion_thrown = throw_random_minion()
-            end
+        
+        -- Throw all minions
+        while num_battlefield_minions() < 8 and throw_random_minion() do
         end
-        print_to_log("throw_random_minion done");
 
         -- Keep killing tanks, while we're able to
         while eliminate_tanks() do
