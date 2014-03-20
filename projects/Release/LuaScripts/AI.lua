@@ -30,6 +30,14 @@ local canWin = function()
     return (total_damage > enemy_hero_health)
 end
 --]]
+local canEntityAttack = function(entity)
+    local can_attack = CanAttack(entity)
+    local is_exhausted = IsExhausted(entity)
+    local is_frozen = IsFrozen(entity)
+
+    return can_attack and (is_exhausted == false) and (is_frozen == false)
+end
+
 local num_battlefield_minions = function()
     local battlefield_cards = GetCards(OurBattlefield)
     return #battlefield_cards
@@ -39,10 +47,9 @@ local nuke_hero = function()
     local battlefield_cards = GetCards(OurBattlefield)
     for i,card in ipairs(battlefield_cards) do
         local entity = ConvertCardToEntity(card)
-        local can_attack = CanAttack(entity)
-        local is_exhausted = IsExhausted(entity)
+        local can_attack = canEntityAttack(entity)
 
-        if (can_attack and (is_exhausted == false)) then
+        if (can_attack) then
             local enemy_hero_card = GetCard(EnemyHero)
             DoAttack(card, enemy_hero_card)
         end
@@ -71,9 +78,9 @@ local get_our_attackers = function()
     local our_battlefield_cards = GetCards(OurBattlefield)
     for i,card in ipairs(our_battlefield_cards) do
         local entity = ConvertCardToEntity(card)
-        local can_attack = CanAttack(entity)
-        local is_exhausted = IsExhausted(entity)
-        if (can_attack and (is_exhausted == false)) then
+        local can_attack = canEntityAttack(entity)
+
+        if (can_attack) then
             table.insert(our_attackers, card)
         end
     end
@@ -170,6 +177,28 @@ local throw_random_minion = function()
     --print_to_log("no playable card")
     return false
 end
+
+
+-- Only for non-targeted
+-- TODO: Add a check for these heroes
+-- NOTE: Will require an extension of the Lua API
+--[[
+local use_hero_power = function()
+    local hero_power_card = GetCard(HeroPower)
+    local entity = ConvertCardToEntity(hero_power_card)
+
+    local cost = GetCost(entity)
+    local avaiable_crystals = GetCrystals(OurHero)
+    if (cost <= avaiable_crystals) then
+        __csharp_do_attack(hero_power_card)
+        __critical_pause = true
+        coroutine.yield()
+        __csharp_drop_card(hero_power_card, true)
+        __critical_pause = true
+        coroutine.yield()
+    end
+end
+--]]
 
 -- Do AI, returns nothing, takes nothing
 turn_start_function = function()
