@@ -1,11 +1,11 @@
 --[[
 -- Return a list of attack rating
 local battlefield_attacks = function()
-    local battlefield_cards = getCards(Battlefield)
+    local battlefield_cards = GetCards(Battlefield)
     local battlefield_attacks = {}
 
     for card,value in pairs(battlefield_cards) do
-        local card_attack = getAttack(card)
+        local card_attack = GetATK(card)
         table.insert(battlefield_attacks, card_attack)
     end
     return battlefield_attacks
@@ -26,25 +26,25 @@ end
 local canWin = function()
     -- TODO: This should check cards too, and hero ability, all direct damage 
     local total_damage = battlefield_damage()
-    local enemy_hero_health = getHealth(EnemyHero)
+    local enemy_hero_health = GetHealth(EnemyHero)
     return (total_damage > enemy_hero_health)
 end
 --]]
 local num_battlefield_minions = function()
-    local battlefield_cards = getCards(OurBattlefield)
+    local battlefield_cards = GetCards(OurBattlefield)
     return #battlefield_cards
 end
 
 local nuke_hero = function()
-    local battlefield_cards = getCards(OurBattlefield)
+    local battlefield_cards = GetCards(OurBattlefield)
     for i,card in ipairs(battlefield_cards) do
-        local entity = convertCardToEntity(card)
-        local can_attack = canAttack(entity)
-        local is_exhausted = isExhausted(entity)
+        local entity = ConvertCardToEntity(card)
+        local can_attack = CanAttack(entity)
+        local is_exhausted = IsExhausted(entity)
 
         if (can_attack and (is_exhausted == false)) then
-            local enemy_hero_card = getEnemyHero()
-            doAttack(card, enemy_hero_card)
+            local enemy_hero_card = GetCard(EnemyHero)
+            DoAttack(card, enemy_hero_card)
         end
     end
 end
@@ -52,9 +52,9 @@ end
 local get_enemy_tanks = function()
     local enemy_tanks = {}
 
-    local enemy_battlefield_cards = getCards(EnemyBattlefield)
+    local enemy_battlefield_cards = GetCards(EnemyBattlefield)
     for i,enemy_card in ipairs(enemy_battlefield_cards) do
-        local is_tank = isTank(enemy_card)
+        local is_tank = HasTaunt(enemy_card)
         -- if it's a tank
         if is_tank == true then
             table.insert(enemy_tanks, enemy_card)
@@ -68,11 +68,11 @@ local get_our_attackers = function()
 
     local our_attackers = {}
 
-    local our_battlefield_cards = getCards(OurBattlefield)
+    local our_battlefield_cards = GetCards(OurBattlefield)
     for i,card in ipairs(our_battlefield_cards) do
-        local entity = convertCardToEntity(card)
-        local can_attack = canAttack(entity)
-        local is_exhausted = isExhausted(entity)
+        local entity = ConvertCardToEntity(card)
+        local can_attack = CanAttack(entity)
+        local is_exhausted = IsExhausted(entity)
         if (can_attack and (is_exhausted == false)) then
             table.insert(our_attackers, card)
         end
@@ -83,16 +83,17 @@ end
 
 local eliminate_tanks = function()
 
-    local enemy_battlefield_cards = getCards(EnemyBattlefield)
+    local enemy_battlefield_cards = GetCards(EnemyBattlefield)
     for i,enemy_card in ipairs(enemy_battlefield_cards) do
-        local is_tank = isTank(enemy_card)
+        local enemy_entity = ConvertCardToEntity(enemy_card)
+        local is_tank = HasTaunt(enemy_entity)
         -- if it's a tank
         if is_tank == true then
             
             print_to_log("Tank found");
 
-            local tank_entity = convertCardToEntity(enemy_card)
-            local tank_hp_left = getHealth(tank_entity) - getDamage(tank_entity)
+            local tank_entity = ConvertCardToEntity(enemy_card)
+            local tank_hp_left = GetHealth(tank_entity) - GetDamage(tank_entity)
 
             print_to_log("Tank has " .. tank_hp_left .. " hp left");
 
@@ -101,8 +102,8 @@ local eliminate_tanks = function()
 
             local our_attackers = get_our_attackers()
             for i, our_atk in ipairs(our_attackers) do
-                local attack_entity = convertCardToEntity(our_atk)
-                local attack = getAttack(attack_entity)
+                local attack_entity = ConvertCardToEntity(our_atk)
+                local attack = GetATK(attack_entity)
 
                 if (attack >= tank_hp_left) and (attack < best_attacker_atk) then
                     best_attacker = our_atk
@@ -111,11 +112,11 @@ local eliminate_tanks = function()
             end
 
             if (best_attacker ~= nil) then
-                doAttack(best_attacker, enemy_card)
+                DoAttack(best_attacker, enemy_card)
                 return true
             elseif (#our_attackers ~= 0) then
                 best_attacker = table.remove(our_attackers, 1)
-                doAttack(best_attacker, enemy_card)
+                DoAttack(best_attacker, enemy_card)
                 return true
             else
                 return false;
@@ -127,11 +128,12 @@ end
 
 local throw_random_minion = function()
     
-    local cards_on_hand = getCards(Hand)
+    local cards_on_hand = GetCards(Hand)
     local minion_cards = {}
     -- Find all minion cards
     for i,card in ipairs(cards_on_hand) do
-        local is_minion = isMinion(card)
+        local entity = ConvertCardToEntity(card)
+        local is_minion = IsMinion(entity)
         if is_minion then
             table.insert(minion_cards, card)
         end
@@ -139,7 +141,7 @@ local throw_random_minion = function()
     
     --print_to_log(#minion_cards .. " minions on hand")
     -- Find the most expensive one, we can throw down
-    local avaiable_crystals = getCrystals(OurHero)
+    local avaiable_crystals = GetCrystals(OurHero)
 
     --print_to_log("crystal")
     local most_expensive_card = nil
@@ -147,7 +149,8 @@ local throw_random_minion = function()
     local most_expensive_card_index = 0
     for i,card in ipairs(minion_cards) do
         --print_to_log("loop entry")
-        local card_cost = getCost(card)
+        local entity = ConvertCardToEntity(card)
+        local card_cost = GetCost(entity)
         --print_to_log("card cost = " .. card_cost)
         
         if((card_cost > most_expensive_card_cost) and (card_cost <= avaiable_crystals)) then
@@ -161,7 +164,7 @@ local throw_random_minion = function()
     -- We found a card!
     if most_expensive_card ~= nil then
         print_to_log("playable card cost: " .. most_expensive_card_cost)
-        dropCard(most_expensive_card)
+        DropCard(most_expensive_card)
         return true
     end
     --print_to_log("no playable card")
@@ -215,7 +218,8 @@ function do_mulligan(cards)
     replace = {}
     
     for i, card in ipairs(cards) do
-        if getCost(card) >= 4 then
+        local entity = ConvertCardToEntity(card)
+        if GetCost(entity) >= 4 then
             table.insert(replace, card)
         end
     end

@@ -34,34 +34,21 @@ namespace HearthstoneBot
                 // Print to screen
                 lua.RegisterFunction("__csharp_print_to_log", this, typeof(API).GetMethod("__csharp_print_to_log"));
 
-                // Card functions
-                lua.RegisterFunction("__csharp_get_our_battlefield_cards", this, typeof(API).GetMethod("__csharp_get_our_battlefield_cards"));
-                lua.RegisterFunction("__csharp_get_enemy_battlefield_cards", this, typeof(API).GetMethod("__csharp_get_enemy_battlefield_cards"));
-                lua.RegisterFunction("__csharp_get_hand_cards", this, typeof(API).GetMethod("__csharp_get_hand_cards"));
-                lua.RegisterFunction("__csharp_drop_card", this, typeof(API).GetMethod("__csharp_drop_card"));
-                lua.RegisterFunction("__csharp_enemy_hero_card", this, typeof(API).GetMethod("__csharp_enemy_hero_card"));
-                lua.RegisterFunction("__csharp_is_card_tank", this, typeof(API).GetMethod("__csharp_is_card_tank"));
+                // Game functions
+                // Query for cards
+                lua.RegisterFunction("__csharp_cards", this, typeof(API).GetMethod("getCards"));
+                lua.RegisterFunction("__csharp_card", this, typeof(API).GetMethod("getCard"));
+                // Query the number of crystals
+                lua.RegisterFunction("__csharp_crystals", this, typeof(API).GetMethod("getCrystals"));
 
-                // Query about card
-                lua.RegisterFunction("__csharp_get_attack_of_entity", this, typeof(API).GetMethod("__csharp_get_attack_of_entity"));
-                lua.RegisterFunction("__csharp_get_health_of_entity", this, typeof(API).GetMethod("__csharp_get_health_of_entity"));
-                lua.RegisterFunction("__csharp_get_damage_of_entity", this, typeof(API).GetMethod("__csharp_get_damage_of_entity"));
-                lua.RegisterFunction("__csharp_can_entity_attack", this, typeof(API).GetMethod("__csharp_can_entity_attack"));
-                lua.RegisterFunction("__csharp_can_entity_be_attack", this, typeof(API).GetMethod("__csharp_can_entity_be_attack"));
-                lua.RegisterFunction("__csharp_is_card_a_minion", this, typeof(API).GetMethod("__csharp_is_card_a_minion"));
-                lua.RegisterFunction("__csharp_get_card_cost", this, typeof(API).GetMethod("__csharp_get_card_cost"));
-                lua.RegisterFunction("__csharp_is_entity_exhausted", this, typeof(API).GetMethod("__csharp_is_entity_exhausted"));
-                
+                // Query about entities
+                lua.RegisterFunction("__csharp_entity_bool", this, typeof(API).GetMethod("getEntityBool"));
+                lua.RegisterFunction("__csharp_entity_value", this, typeof(API).GetMethod("getEntityValue"));
+
+                // Utility functions
+                lua.RegisterFunction("__csharp_drop_card", this, typeof(API).GetMethod("drop_card"));
                 lua.RegisterFunction("__csharp_convert_to_entity", this, typeof(API).GetMethod("__csharp_convert_to_entity"));
-
-                // Query about hero
-                lua.RegisterFunction("__csharp_get_health_of_our_hero", this, typeof(API).GetMethod("__csharp_get_health_of_our_hero"));
-                lua.RegisterFunction("__csharp_our_hero_crystals", this, typeof(API).GetMethod("__csharp_our_hero_crystals"));
-                lua.RegisterFunction("__csharp_enemy_hero_crystals", this, typeof(API).GetMethod("__csharp_enemy_hero_crystals"));
-                lua.RegisterFunction("__use_hero_power", this, typeof(API).GetMethod("__use_hero_power"));
-
-                // Attack
-                lua.RegisterFunction("__csharp_do_attack", this, typeof(API).GetMethod("__csharp_do_attack"));
+                lua.RegisterFunction("__csharp_do_attack", this, typeof(API).GetMethod("attack"));
                 
                 Log.log("Loading Main.lua...");
                 lua.DoFile(lua_script_path + "Main.lua");
@@ -80,12 +67,12 @@ namespace HearthstoneBot
             Log.log("Scripts loaded constructed");
         }
 
-        public LuaTable CreateTable()
+        private LuaTable CreateTable()
         {
             return (LuaTable) lua.DoString("return {}")[0];
         }
 
-        private LuaTable __csharp_card_transfer(List<Card> list)
+        private LuaTable CardListToTable(List<Card> list)
         {
             LuaTable tab = CreateTable();
             int i = 1;
@@ -97,7 +84,7 @@ namespace HearthstoneBot
             return tab;
         }
 
-        private List<Card> __csharp_card_construct(LuaTable tab)
+        private List<Card> TableToCardList(LuaTable tab)
         {
             List<Card> list = new List<Card>();
             
@@ -114,93 +101,141 @@ namespace HearthstoneBot
             return list;
         }
 
-        public LuaTable __csharp_get_our_battlefield_cards()
+        public LuaTable getCards(string where)
         {
-            List<Card> list = getOurPlayer().GetBattlefieldZone().GetCards().ToList<Card>();
-            return __csharp_card_transfer(list);
+            List<Card> list = null;
+            switch(where)
+            {
+                case "HAND":
+                    list = getOurPlayer().GetHandZone().GetCards().ToList<Card>();
+                    break;
+
+                case "OUR_BATTLEFIELD":
+                    list = getOurPlayer().GetBattlefieldZone().GetCards().ToList<Card>();
+                    break;
+
+                case "ENEMY_BATTLEFIELD":
+                    list = getEnemyPlayer().GetBattlefieldZone().GetCards().ToList<Card>();
+                    break;
+
+                default:
+                    Log.error("getCards: Unknown area requested = " + where);
+                    // Return an empty table
+                    return CreateTable();
+            }
+            return CardListToTable(list);
         }
 
-        public LuaTable __csharp_get_enemy_battlefield_cards()
+        public Card getCard(string which)
         {
-            List<Card> list = getEnemyPlayer().GetBattlefieldZone().GetCards().ToList<Card>();
-            return __csharp_card_transfer(list);
+            switch(which)
+            {
+                case "ENEMY_HERO":
+                    return getEnemyPlayer().GetHeroCard();
+
+                case "OUR_HERO":
+                    return getOurPlayer().GetHeroCard();
+
+                case "HERO_POWER":
+                    return getOurPlayer().GetHeroPowerCard();
+
+                default:
+                    Log.error("getCard: Unknown card requested = " + which);
+                    // Return nothing
+                    return null;
+            }
         }
 
-        public LuaTable __csharp_get_hand_cards()
+        public int getCrystals(string whos)
         {
-            List<Card> list = getOurPlayer().GetHandZone().GetCards().ToList<Card>();
-            return __csharp_card_transfer(list);
+            switch(whos)
+            {
+                case "ENEMY_HERO":
+                    return getEnemyPlayer().GetNumAvailableResources();
+
+                case "OUR_HERO":
+                    return getOurPlayer().GetNumAvailableResources();
+
+                default:
+                    Log.error("getCrystals: Unknown who requested = " + whos);
+                    // Return nothing
+                    return 0;
+            }
         }
 
-        public bool __csharp_drop_card(Card c, bool b)
+        public bool getEntityBool(Entity entity, string which)
         {
-            return drop_card(c, b);
-        }
-/*
-        public int __csharp_get_attack_of_card(Card c)
-        {
-            Entity entity = c.GetEntity();
-            return __csharp_get_attack_of_entity(entity);
-        }
-*/
-        public int __csharp_get_attack_of_entity(Entity entity)
-        {
-            return entity.GetATK();
-        }
-/*
-        public int __csharp_get_health_of_card(Card c)
-        {
-            Entity entity = c.GetEntity();
-            return __csharp_get_health_of_entity(entity);
-        }
-*/
-        public int __csharp_get_health_of_entity(Entity entity)
-        {
-            return entity.GetHealth();
+            if(entity == null)
+            {
+                Log.error("getEntityBool called with entity = null");
+                return false;
+            }
+            if(which == null)
+            {
+                Log.error("getEntityBool called with which = null");
+                return false;
+            }
+
+            // GetOriginalCharge(), HasCharge(), HasBattlecry(), CanBeTargetedByAbilities(), CanBeTargetedByHeroPowers(),
+            // IsImmune(), IsPoisonous(), IsEnraged(), IsFreeze(), IsFrozen(), IsAsleep(), IsStealthed(), HasTaunt(),
+            // HasDivineShield(), IsHero(), IsHeroPower(), IsMinion(), IsSpell(), IsAbility(), IsWeapon(), IsElite(),
+            // IsExhausted(), IsSecret(), CanAttack(), CanBeAttacked(), CanBeTargetedByOpponents(), HasSpellPower(),
+            // IsAffectedBySpellPower(), HasSpellPowerDouble(), IsDamaged(), HasWindfury(), HasCombo(), HasRecall(),
+            // HasDeathrattle(), IsSilenced(), CanBeDamaged()
+            MethodInfo dynMethod = entity.GetType().GetMethod(which, BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.Public);
+            /*
+            if(dynMethod == null)
+            {
+                Log.error("getEntityBool: Unknown function requested = " + which);
+                return false;
+            }
+            */
+            try
+            {
+                return (bool) dynMethod.Invoke(entity, new object[]{});
+            }
+            catch(Exception e)
+            {
+                Log.error("Exception in getEntityBool:");
+                Log.error(e.ToString());
+                return false;
+            }
         }
 
-        public int __csharp_get_damage_of_entity(Entity entity)
+        public int getEntityValue(Entity entity, string which)
         {
-            return entity.GetDamage();
-        }
-
-        public bool __csharp_is_card_a_minion(Card c)
-        {
-            Entity entity = c.GetEntity();
-            return (entity.GetCardType() == TAG_CARDTYPE.MINION);
-        }
-
-        public int __csharp_get_card_cost(Card c)
-        {
-            Entity entity = c.GetEntity();
-            return entity.GetCost();
-        }
-
-        public int __csharp_get_health_of_our_hero()
-        {
-            Entity hero = getOurPlayer().GetHero();
-            return hero.GetHealth();
-        }
-
-        public int __csharp_our_hero_crystals()
-        {
-            return getOurPlayer().GetNumAvailableResources();
-        }
-
-        public int __csharp_enemy_hero_crystals()
-        {
-            return getEnemyPlayer().GetNumAvailableResources();
-        }
-
-        public void __csharp_do_attack(Card c)
-        {
-            attack(c);
-        }
-
-        public Card __csharp_enemy_hero_card()
-        {
-            Card hero_card = getEnemyPlayer().GetHeroCard();
-            return hero_card;
+            if(entity == null)
+            {
+                Log.error("getEntityValue called with entity = null");
+                return -1;
+            }
+            if(which == null)
+            {
+                Log.error("getEntityValue called with which = null");
+                return -1;
+            }
+            // GetOriginalCost(), GetOriginalATK(), GetOriginalHealth(), GetOriginalDurability(),
+            // GetDamage(), GetNumTurnsInPlay(), GetNumAttacksThisTurn(), GetSpellPower(),
+            // GetCost(), GetATK(), GetDurability(), GetZonePosition(), GetArmor(), GetFatigue(),
+            // GetHealth(), GetRemainingHP()
+            MethodInfo dynMethod = entity.GetType().GetMethod(which, BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.Public);
+            /* // TODO: Figure out why mono cannot generate code correctly
+            if(dynMethod == null)
+            {
+                Log.error("getEntityValue: Unknown function requested = " + which);
+                return 0;
+            }
+            */
+            try
+            {
+                return (int) dynMethod.Invoke(entity, new object[]{});
+            }
+            catch(Exception e)
+            {
+                Log.error("Exception in getEntityValue:");
+                Log.error(e.ToString());
+                return -1;
+            }
         }
 
         public bool was_critical_pause_requested()
@@ -224,16 +259,15 @@ namespace HearthstoneBot
                 LuaFunction f = lua.GetFunction("turn_start");
                 if(f == null)
                 {
-                    Log.log("Lua function not found!");
+                    Log.error("Lua function not found!");
                     return;
                 }
                 object[] args = f.Call();
                 string error = (string) args[0];
                 if(error != null)
                 {
-                    Log.log("LUA EXCEPTION");
-                    Log.log(error);
-                    return;
+                    Log.error("Internal Lua Exception");
+                    Log.error(error);
                 }
             }
             catch(LuaException e)
@@ -258,16 +292,12 @@ namespace HearthstoneBot
                     Log.log("Lua function not found!");
                     return null;
                 }
-                
-                LuaTable argument = __csharp_card_transfer(cards);
-
+                LuaTable argument = CardListToTable(cards);
                 object[] args = f.Call(argument);
-                
                 LuaTable replace = args[0] as LuaTable;
-
                 if(replace != null)
                 {
-                    List<Card> replace_list = __csharp_card_construct(replace);
+                    List<Card> replace_list = TableToCardList(replace);
                     return replace_list;
                 }
                 Log.log("NO VALID RETURN TYPE");
@@ -290,54 +320,6 @@ namespace HearthstoneBot
             return c.GetEntity();
         }
 
-        public bool __csharp_is_entity_exhausted(Entity entity)
-        {
-            return entity.IsExhausted();
-        }
-
-        public bool __csharp_can_entity_attack(Entity entity)
-        {
-            return entity.CanAttack();
-        }
-
-        public bool __csharp_can_entity_be_attack(Entity entity)
-        {
-            return entity.CanBeAttacked();
-        }
-        
-        public bool __csharp_is_card_tank(Card c)
-        {
-            Entity entity = c.GetEntity();
-            return entity.HasTaunt();
-        }
-
-        public bool __use_hero_power()
-        {
-            Card c1 = getOurPlayer().GetHeroPowerCard();
-            Log.log("GetHeroPowerCard : " + c1.GetActorName());
-            Log.log("GetHeroPowerCard : " + c1.GetEntity().GetName());
-
-            
-            Card c2 = getOurPlayer().GetHeroCard();
-            Log.log("GetHeroCard : " + c2.GetActorName());
-            Log.log("GetHeroCard : " + c2.GetEntity().GetName());
-
-            if(c1 == null)
-            {
-                return false;
-            }
-            else
-            {
-                // TODO: Figure out which of these lines work, one of them does
-                attack(c1);
-
-                drop_card(c1, true);
-
-                drop_card(c1, false);
-                return true;
-            }
-        }
-
         public static Player getOurPlayer()
         {
             return GameState.Get().GetLocalPlayer();
@@ -351,7 +333,7 @@ namespace HearthstoneBot
 		public void attack(Card c)
 		{
 			Log.log("Attack: " + c.GetEntity().GetName());
-
+            
             PrivateHacker.HandleClickOnCardInBattlefield(c);
 		}
 
@@ -455,42 +437,42 @@ namespace HearthstoneBot
                     }
                 }
             }
-            /* // Spell support
-               else
-               {
-               if (entity.IsSpell())
-               {
-               if (GameState.Get().EntityHasTargets(entity))
-               {
-               input_man.DropCanceledHeldCard(entity.GetCard());
-               return true;
-               }
-               RaycastHit raycastHit2;
-               if (UniversalInputManager.Get().GetInputHitInfo(GameLayer.InvisibleHitBox2.LayerBit(), out raycastHit2))
-               {
-               if (!GameState.Get().HasResponse(entity))
-               {
-               PlayErrors.DisplayPlayError(PlayErrors.GetPlayEntityError(entity), entity);
-               }
-               else
-               {
-               input_man.DoNetworkResponse(entity);
-               if (entity.IsSecret())
-               {
-               input_man.m_lastZoneChangeList = ZoneMgr.Get().AddLocalZoneChange(component, input_man.m_mySecretZone, input_man.m_mySecretZone.GetLastPos());
-               }
-               else
-               {
-               input_man.m_lastZoneChangeList = ZoneMgr.Get().AddLocalZoneChange(component, TAG_ZONE.PLAY);
-               }
-               PrivateHacker.ForceManaUpdate(entity);
-               input_man.PlayPowerUpSpell(component);
-               input_man.PlayPlaySpell(component);
-               }
-               }
-               }
-               }
-               */
+            // Spell support
+            else
+            {
+                if (entity.IsSpell())
+                {
+                    if (GameState.Get().EntityHasTargets(entity))
+                    {
+                        input_man.heldObject = null;
+                        EnemyActionHandler.Get().NotifyOpponentOfCardDropped();
+                        m_myHandZone.UpdateLayout(-1, true);
+                        m_myPlayZone.SortWithSpotForHeldCard(-1);
+
+                        return true;
+                    }
+                    if (!GameState.Get().HasResponse(entity))
+                    {
+                        PlayErrors.DisplayPlayError(PlayErrors.GetPlayEntityError(entity), entity);
+                    }
+                    else
+                    {
+                        input_man.DoNetworkResponse(entity);
+                        if (entity.IsSecret())
+                        {
+                            ZoneSecret m_mySecretZone = PrivateHacker.get_m_mySecretZone();
+                            PrivateHacker.set_m_lastZoneChangeList(ZoneMgr.Get().AddLocalZoneChange(component, m_mySecretZone, m_mySecretZone.GetLastPos()));
+                        }
+                        else
+                        {
+                            PrivateHacker.set_m_lastZoneChangeList(ZoneMgr.Get().AddLocalZoneChange(component, TAG_ZONE.PLAY));
+                        }
+                        PrivateHacker.ForceManaUpdate(entity);
+                        PrivateHacker.PlayPowerUpSpell(component);
+                        PrivateHacker.PlayPlaySpell(component);
+                    }
+                }
+            }
             m_myHandZone.UpdateLayout(-1, true);
             m_myPlayZone.SortWithSpotForHeldCard(-1);
             if (does_target)

@@ -33,6 +33,20 @@ namespace HearthstoneBot
             dynMethod.Invoke(input_mgr, new object[] { ob });
         }
 
+        public static bool PlayPowerUpSpell(Card c)
+        {
+            InputManager input_mgr = InputManager.Get();
+            MethodInfo dynMethod = input_mgr.GetType().GetMethod("PlayPowerUpSpell", BindingFlags.NonPublic | BindingFlags.Instance);
+            return (bool) dynMethod.Invoke(input_mgr, new object[] { c });
+        }
+
+        public static bool PlayPlaySpell(Card c)
+        {
+            InputManager input_mgr = InputManager.Get();
+            MethodInfo dynMethod = input_mgr.GetType().GetMethod("PlayPlaySpell", BindingFlags.NonPublic | BindingFlags.Instance);
+            return (bool) dynMethod.Invoke(input_mgr, new object[] { c });
+        }
+
         public static ZonePlay get_m_myPlayZone()
         {
             InputManager input_mgr = InputManager.Get();
@@ -52,6 +66,13 @@ namespace HearthstoneBot
             InputManager input_mgr = InputManager.Get();
             FieldInfo myFieldInfo = input_mgr.GetType().GetField("m_myWeaponZone", BindingFlags.NonPublic | BindingFlags.Instance); 
             return (ZoneWeapon) myFieldInfo.GetValue(input_mgr); 
+        }
+
+        public static ZoneSecret get_m_mySecretZone()
+        {
+            InputManager input_mgr = InputManager.Get();
+            FieldInfo myFieldInfo = input_mgr.GetType().GetField("m_mySecretZone", BindingFlags.NonPublic | BindingFlags.Instance); 
+            return (ZoneSecret) myFieldInfo.GetValue(input_mgr);
         }
 
         public static void set_m_battlecrySourceCard(Card val)

@@ -1,3 +1,6 @@
+-- Should not be modified by user
+__end_turn = false
+
 local co_routine = coroutine.create(turn_start_function)
 function turn_start()
 

@@ -8,4 +8,3 @@ print_to_log("Loading AI.lua");
 dofile(script_path .. "AI.lua")
 print_to_log("Loading script_engine.lua");
 dofile(script_path .. "script_engine.lua")
-
