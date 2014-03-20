@@ -315,10 +315,31 @@ namespace HearthstoneBot
             end_turn();
         }
 
-        // TODO: Needs a fix
         public bool __use_hero_power()
         {
-            return false;
+            Card c1 = getOurPlayer().GetHeroPowerCard();
+            Log.log("GetHeroPowerCard : " + c1.GetActorName());
+            Log.log("GetHeroPowerCard : " + c1.GetEntity().GetName());
+
+            
+            Card c2 = getOurPlayer().GetHeroCard();
+            Log.log("GetHeroCard : " + c2.GetActorName());
+            Log.log("GetHeroCard : " + c2.GetEntity().GetName());
+
+            if(c1 == null)
+            {
+                return false;
+            }
+            else
+            {
+                // TODO: Figure out which of these lines work, one of them does
+                attack(c1);
+
+                drop_card(c1, true);
+
+                drop_card(c1, false);
+                return true;
+            }
         }
 
         public static Player getOurPlayer()
@@ -331,34 +352,179 @@ namespace HearthstoneBot
             return GameState.Get().GetFirstOpponentPlayer(getOurPlayer());
         }
 
-		public static void attack(Card c)
+		public void attack(Card c)
 		{
 			Log.log("Attack: " + c.GetEntity().GetName());
 
-            InputManager input_mgr = InputManager.Get();
-            MethodInfo dynMethod = input_mgr.GetType().GetMethod("HandleClickOnCardInBattlefield", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            Entity e = c.GetEntity();
-
-            dynMethod.Invoke(input_mgr, new object[] { e });
+            PrivateHacker.HandleClickOnCardInBattlefield(c);
 		}
 
-		public static bool drop_card(Card c, bool pickup)
-		{
-			Log.log("Dropped card: " + c.GetEntity().GetName());
-
-            InputManager input_mgr = InputManager.Get();
-            if (pickup)
+        public bool drop_held_card(int requested_zone_position = 1) 
+        {
+            try
             {
-                GameObject ob = c.gameObject;
+                return drop_held_card_worker(requested_zone_position);
+            }
+            catch(Exception e)
+            {
+                Log.error("Exception within drop_held_card_worker");
+                Log.error(e.ToString());
+            }
+            return false;
+        }
 
-                MethodInfo dynMethod = input_mgr.GetType().GetMethod("GrabCard", BindingFlags.NonPublic | BindingFlags.Instance);
-                dynMethod.Invoke(input_mgr, new object[] { ob });
+        public bool drop_held_card_worker(int requested_zone_position)
+        {
+            PegCursor.Get().SetMode(PegCursor.Mode.STOPDRAG);
+
+            InputManager input_man = InputManager.Get();
+            if (input_man.heldObject == null)
+            {
+                Log.log("Nothing held, when trying to drop");
+                return false;
+            }
+            Card component = input_man.heldObject.GetComponent<Card>();
+
+            ZonePlay m_myPlayZone = PrivateHacker.get_m_myPlayZone();
+            ZoneHand m_myHandZone = PrivateHacker.get_m_myHandZone();
+            
+            component.SetDoNotSort(false);
+            iTween.Stop(input_man.heldObject);
+            Entity entity = component.GetEntity();
+            component.NotifyLeftPlayfield();
+            GameState.Get().GetGameEntity().NotifyOfCardDropped(entity);
+            m_myPlayZone.UnHighlightBattlefield();
+            DragCardSoundEffects component2 = component.GetComponent<DragCardSoundEffects>();
+            if (component2)
+            {
+                component2.Disable();
+            }
+            UnityEngine.Object.Destroy(input_man.heldObject.GetComponent<DragRotator>());
+            input_man.heldObject = null;
+            ProjectedShadow componentInChildren = component.GetActor().GetComponentInChildren<ProjectedShadow>();
+            if (componentInChildren != null)
+            {
+                componentInChildren.DisableShadow();
+            }
+            
+            // Check that the card is on the hand
+            Zone card_zone = component.GetZone();
+            if ((card_zone == null) || card_zone.m_ServerTag != TAG_ZONE.HAND)
+            {
+                return false;
+            }
+            
+            bool does_target = false;
+
+            bool is_minion = entity.IsMinion();
+            bool is_weapon = entity.IsWeapon();
+
+            if (is_minion || is_weapon)
+            {
+                Zone zone = (!is_weapon) ? (Zone) m_myPlayZone : (Zone) PrivateHacker.get_m_myWeaponZone();
+                if (zone)
+                {
+                    GameState gameState = GameState.Get();
+                    int card_position = Network.NoPosition;
+                    if (is_minion)
+                    {
+                        card_position = ZoneMgr.Get().PredictZonePosition(zone, requested_zone_position);
+                        gameState.SetSelectedOptionPosition(card_position);
+                    }
+                    if (input_man.DoNetworkResponse(entity))
+                    {
+                        if (is_weapon)
+                        {
+                            PrivateHacker.set_m_lastZoneChangeList(ZoneMgr.Get().AddLocalZoneChange(component, zone, zone.GetLastPos()));
+                        }
+                        else
+                        {
+                            PrivateHacker.set_m_lastZoneChangeList(ZoneMgr.Get().AddPredictedLocalZoneChange(component, zone, requested_zone_position, card_position));
+                        }
+                        PrivateHacker.ForceManaUpdate(entity);
+                        if (is_minion && gameState.EntityHasTargets(entity))
+                        {
+                            does_target = true;
+                            if (TargetReticleManager.Get())
+                            {
+                                bool showArrow = true;
+                                TargetReticleManager.Get().CreateFriendlyTargetArrow(entity, entity, true, showArrow, null);
+                            }
+                            PrivateHacker.set_m_battlecrySourceCard(component);
+                        }
+                    }
+                    else
+                    {
+                        gameState.SetSelectedOptionPosition(Network.NoPosition);
+                    }
+                }
+            }
+            /* // Spell support
+               else
+               {
+               if (entity.IsSpell())
+               {
+               if (GameState.Get().EntityHasTargets(entity))
+               {
+               input_man.DropCanceledHeldCard(entity.GetCard());
+               return true;
+               }
+               RaycastHit raycastHit2;
+               if (UniversalInputManager.Get().GetInputHitInfo(GameLayer.InvisibleHitBox2.LayerBit(), out raycastHit2))
+               {
+               if (!GameState.Get().HasResponse(entity))
+               {
+               PlayErrors.DisplayPlayError(PlayErrors.GetPlayEntityError(entity), entity);
+               }
+               else
+               {
+               input_man.DoNetworkResponse(entity);
+               if (entity.IsSecret())
+               {
+               input_man.m_lastZoneChangeList = ZoneMgr.Get().AddLocalZoneChange(component, input_man.m_mySecretZone, input_man.m_mySecretZone.GetLastPos());
+               }
+               else
+               {
+               input_man.m_lastZoneChangeList = ZoneMgr.Get().AddLocalZoneChange(component, TAG_ZONE.PLAY);
+               }
+               PrivateHacker.ForceManaUpdate(entity);
+               input_man.PlayPowerUpSpell(component);
+               input_man.PlayPlaySpell(component);
+               }
+               }
+               }
+               }
+               */
+            m_myHandZone.UpdateLayout(-1, true);
+            m_myPlayZone.SortWithSpotForHeldCard(-1);
+            if (does_target)
+            {
+                if (EnemyActionHandler.Get())
+                {
+                    EnemyActionHandler.Get().NotifyOpponentOfTargetModeBegin(component);
+                }
             }
             else
             {
-                MethodInfo dynMethod = input_mgr.GetType().GetMethod("DropHeldCard", BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[]{}, null);
-                return (bool) dynMethod.Invoke(input_mgr, null);
+                if (GameState.Get().GetResponseMode() != GameState.ResponseMode.SUB_OPTION)
+                {
+                    EnemyActionHandler.Get().NotifyOpponentOfCardDropped();
+                }
+            }
+            return true;
+        }
+
+		public bool drop_card(Card c, bool pickup)
+		{
+			Log.log("Dropped card: " + c.GetEntity().GetName());
+
+            if (pickup)
+            {
+                PrivateHacker.GrabCard(c);
+            }
+            else
+            {
+                return drop_held_card();
             }
             return false;
 		}
@@ -366,6 +532,7 @@ namespace HearthstoneBot
 		public static void end_turn()
 		{
 			InputManager.Get().DoEndTurnButton();
+            // TODO: Delay for 10 seconds, to avoid running AI out of sync
 		}
     }
 }
