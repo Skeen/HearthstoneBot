@@ -38,6 +38,7 @@ namespace HearthstoneBot
             thread = new Thread(new ThreadStart(run));
 
             mutex = new Mutex();
+            Log.log("ServerSocket loaded!");
         }
 
         public void stop()
@@ -60,6 +61,7 @@ namespace HearthstoneBot
 
 		private void run()
 		{
+            Log.log("ServerSocket running!");
             // Open a server socket
             try
             {
@@ -73,6 +75,7 @@ namespace HearthstoneBot
             }
             // Start listening
 			socket.Start();
+            Log.log("ServerSocket started!");
 
 			try
 			{
@@ -122,6 +125,7 @@ namespace HearthstoneBot
 				Log.error(e.StackTrace);
 			}
 
+            Log.log("ServerSocket stopped!");
             // Stop listening
             socket.Stop();
 		}
