@@ -205,7 +205,6 @@ turn_start_function = function()
 
         print_to_log("AI ended" .. i);
     end
-    end_turn();
     print_to_log("End of Turn Called");
 end
 

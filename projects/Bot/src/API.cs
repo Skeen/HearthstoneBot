@@ -63,9 +63,6 @@ namespace HearthstoneBot
                 // Attack
                 lua.RegisterFunction("__csharp_do_attack", this, typeof(API).GetMethod("__csharp_do_attack"));
                 
-                // End Turn
-                lua.RegisterFunction("__csharp_end_turn", this, typeof(API).GetMethod("__csharp_end_turn"));
-                
                 Log.log("Loading Main.lua...");
                 lua.DoFile(lua_script_path + "Main.lua");
                 Log.log("Done");
@@ -206,14 +203,21 @@ namespace HearthstoneBot
             return hero_card;
         }
 
-        private bool was_critical_pause_requested()
+        public bool was_critical_pause_requested()
         {
             bool critical_puase_requested = (bool) lua["__critical_pause"];
             lua["__critical_pause"] = false;
             return critical_puase_requested;
         }
 
-        public bool run()
+        public bool was_end_turn_requested()
+        {
+            bool end_turn_requested = (bool) lua["__end_turn"];
+            lua["__end_turn"] = false;
+            return end_turn_requested;
+        }
+
+        public void run()
         {
             try
             {
@@ -221,7 +225,7 @@ namespace HearthstoneBot
                 if(f == null)
                 {
                     Log.log("Lua function not found!");
-                    return false;
+                    return;
                 }
                 object[] args = f.Call();
                 string error = (string) args[0];
@@ -229,10 +233,8 @@ namespace HearthstoneBot
                 {
                     Log.log("LUA EXCEPTION");
                     Log.log(error);
-                    return false;
+                    return;
                 }
-                
-                return was_critical_pause_requested();
             }
             catch(LuaException e)
             {
@@ -244,7 +246,6 @@ namespace HearthstoneBot
             {
                 Log.error(e.ToString());
             }
-            return false;
         }
 
         public List<Card> mulligan(List<Card> cards)
@@ -308,11 +309,6 @@ namespace HearthstoneBot
         {
             Entity entity = c.GetEntity();
             return entity.HasTaunt();
-        }
-
-        public void __csharp_end_turn()
-        {
-            end_turn();
         }
 
         public bool __use_hero_power()
@@ -527,12 +523,6 @@ namespace HearthstoneBot
                 return drop_held_card();
             }
             return false;
-		}
-
-		public static void end_turn()
-		{
-			InputManager.Get().DoEndTurnButton();
-            // TODO: Delay for 10 seconds, to avoid running AI out of sync
 		}
     }
 }

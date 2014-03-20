@@ -9,7 +9,7 @@ function turn_start()
     -- If it has run all the way through
     if(coroutine.status(co_routine) == "dead") then
         -- Create a new routine
-        __critical_pause = false
+        __end_turn = true
         co_routine = coroutine.create(turn_start_function)
     end
     return nil

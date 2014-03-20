@@ -6,6 +6,7 @@ OurHero           = "OUR_HERO"
 EnemyHero         = "ENEMY_HERO"
 
 __critical_pause = false
+__end_turn = false
 
 -- Return a list of cards in a given region
 function getCards(where)
@@ -134,10 +135,6 @@ function isTank(card)
     local is_tank = __csharp_is_card_tank(card)
     coroutine.yield()
     return is_tank
-end
-
-function end_turn()
-    __csharp_end_turn()
 end
 
 function use_hero_power()

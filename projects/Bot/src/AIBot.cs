@@ -151,7 +151,7 @@ namespace HearthstoneBot
 
             // End mulligan
             MulliganManager.Get().EndMulligan();
-			API.end_turn();
+			end_turn();
 
             // Report progress
 			Log.say("Mulligan Ended : " + replace.Count + " cards changed");
@@ -314,6 +314,12 @@ namespace HearthstoneBot
             }
         }
 
+        private void end_turn()
+		{
+			InputManager.Get().DoEndTurnButton();
+            Delay(10000);
+		}
+
         // Called to invoke AI
         private void run_ai()
         {
@@ -321,11 +327,16 @@ namespace HearthstoneBot
             try
             {
                 // Run the AI, check if it requests a pause
-                bool should_delay = api.run();
-                if(should_delay)
+                api.run();
+                if(api.was_critical_pause_requested())
                 {
                     // Delay 2.0 seconds
                     Delay(2000);
+                }
+                if(api.was_end_turn_requested())
+                {
+                    // Go ahead and end the turn
+                    end_turn();
                 }
             }
             catch(Exception e)
