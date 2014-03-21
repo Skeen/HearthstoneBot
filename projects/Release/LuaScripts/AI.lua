@@ -34,8 +34,9 @@ local canEntityAttack = function(entity)
     local can_attack = CanAttack(entity)
     local is_exhausted = IsExhausted(entity)
     local is_frozen = IsFrozen(entity)
+    local attack_dmg = GetATK(entity)
 
-    return can_attack and (is_exhausted == false) and (is_frozen == false)
+    return can_attack and (is_exhausted == false) and (is_frozen == false) and (attack_dmg > 0)
 end
 
 local num_battlefield_minions = function()
@@ -239,7 +240,7 @@ turn_start_function = function()
         end
         
         -- Throw all minions
-        while num_battlefield_minions() < 8 and throw_random_minion() do
+        while num_battlefield_minions() < 7 and throw_random_minion() do
         end
 
         -- Keep killing tanks, while we're able to
