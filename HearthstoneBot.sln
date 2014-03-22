@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot", "projects\Bot\Bot.csproj", "{86534AE7-7CC7-4B5A-BB80-787ED0CD844A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LuaScripts", "projects\Release\LuaScripts\LuaScripts.csproj", "{1C83417F-819F-46A5-A277-25989AAD1DEC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoaderCommandline", "projects\LoaderCommandline\LoaderCommandline.csproj", "{11AD40C1-8F59-4D22-B5A6-515030E023A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoaderGUI", "projects\LoaderGUI\LoaderGUI.csproj", "{8671C2FF-1A6F-4356-B07D-8BE52CA923E4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Injector", "projects\Injector\Injector.csproj", "{3EBAE152-0C13-42AC-9E9F-B55DEE1FD5BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unjector", "projects\Unjector\Unjector.csproj", "{B973C896-1F9B-43E6-833C-47BB78EDCC7E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoBotter", "projects\AutoBotter\AutoBotter.csproj", "{27E03BF4-239A-4FB1-B37E-78EC31E85096}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{86534AE7-7CC7-4B5A-BB80-787ED0CD844A}.Debug|x86.ActiveCfg = Debug|x86
+		{86534AE7-7CC7-4B5A-BB80-787ED0CD844A}.Debug|x86.Build.0 = Debug|x86
+		{86534AE7-7CC7-4B5A-BB80-787ED0CD844A}.Release|x86.ActiveCfg = Release|x86
+		{86534AE7-7CC7-4B5A-BB80-787ED0CD844A}.Release|x86.Build.0 = Release|x86
+		{1C83417F-819F-46A5-A277-25989AAD1DEC}.Debug|x86.ActiveCfg = Debug|x86
+		{1C83417F-819F-46A5-A277-25989AAD1DEC}.Debug|x86.Build.0 = Debug|x86
+		{1C83417F-819F-46A5-A277-25989AAD1DEC}.Release|x86.ActiveCfg = Release|x86
+		{1C83417F-819F-46A5-A277-25989AAD1DEC}.Release|x86.Build.0 = Release|x86
+		{11AD40C1-8F59-4D22-B5A6-515030E023A7}.Debug|x86.ActiveCfg = Debug|x86
+		{11AD40C1-8F59-4D22-B5A6-515030E023A7}.Debug|x86.Build.0 = Debug|x86
+		{11AD40C1-8F59-4D22-B5A6-515030E023A7}.Release|x86.ActiveCfg = Release|x86
+		{11AD40C1-8F59-4D22-B5A6-515030E023A7}.Release|x86.Build.0 = Release|x86
+		{8671C2FF-1A6F-4356-B07D-8BE52CA923E4}.Debug|x86.ActiveCfg = Debug|x86
+		{8671C2FF-1A6F-4356-B07D-8BE52CA923E4}.Debug|x86.Build.0 = Debug|x86
+		{8671C2FF-1A6F-4356-B07D-8BE52CA923E4}.Release|x86.ActiveCfg = Release|x86
+		{8671C2FF-1A6F-4356-B07D-8BE52CA923E4}.Release|x86.Build.0 = Release|x86
+		{3EBAE152-0C13-42AC-9E9F-B55DEE1FD5BC}.Debug|x86.ActiveCfg = Debug|x86
+		{3EBAE152-0C13-42AC-9E9F-B55DEE1FD5BC}.Debug|x86.Build.0 = Debug|x86
+		{3EBAE152-0C13-42AC-9E9F-B55DEE1FD5BC}.Release|x86.ActiveCfg = Release|x86
+		{3EBAE152-0C13-42AC-9E9F-B55DEE1FD5BC}.Release|x86.Build.0 = Release|x86
+		{B973C896-1F9B-43E6-833C-47BB78EDCC7E}.Debug|x86.ActiveCfg = Debug|x86
+		{B973C896-1F9B-43E6-833C-47BB78EDCC7E}.Debug|x86.Build.0 = Debug|x86
+		{B973C896-1F9B-43E6-833C-47BB78EDCC7E}.Release|x86.ActiveCfg = Release|x86
+		{B973C896-1F9B-43E6-833C-47BB78EDCC7E}.Release|x86.Build.0 = Release|x86
+		{27E03BF4-239A-4FB1-B37E-78EC31E85096}.Debug|x86.ActiveCfg = Debug|x86
+		{27E03BF4-239A-4FB1-B37E-78EC31E85096}.Debug|x86.Build.0 = Debug|x86
+		{27E03BF4-239A-4FB1-B37E-78EC31E85096}.Release|x86.ActiveCfg = Release|x86
+		{27E03BF4-239A-4FB1-B37E-78EC31E85096}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
