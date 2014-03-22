@@ -269,3 +269,101 @@ function do_mulligan(cards)
 
     return replace
 end
+
+
+local throw_random_minion2 = function()
+    -- Check if the battlefield is full
+	if num_battlefield_minions() >= 7 then
+	    return {}
+	end
+
+    local minion_cards = {}
+    -- Find all minion cards
+    for i,card in ipairs(GetCards(Hand)) do
+        local entity = ConvertCardToEntity(card)
+        local is_minion = IsMinion(entity)
+        if is_minion then
+            table.insert(minion_cards, card)
+        end
+    end
+    
+    --print_to_log(#minion_cards .. " minions on hand")
+    -- Find the most expensive one, we can throw down
+    local num_crystals = GetCrystals(OurHero)
+
+    --print_to_log("crystal")
+    local most_expensive_card = nil
+    local most_expensive_card_cost = 0
+    local most_expensive_card_index = 0
+    for i,card in ipairs(minion_cards) do
+        --print_to_log("loop entry")
+        local entity = ConvertCardToEntity(card)
+        local card_cost = GetCost(entity)
+        --print_to_log("card cost = " .. card_cost)
+        
+        if((card_cost > most_expensive_card_cost) and (card_cost <= num_crystals)) then
+            --print_to_log("new expensive card")
+            most_expensive_card_cost = card_cost
+            most_expensive_card = card
+            most_expensive_card_index = i
+        end
+    end
+    --print_to_log("post loop crystal")
+    -- We found a card!
+    if most_expensive_card ~= nil then
+        print_to_log("playable card cost: " .. most_expensive_card_cost)
+        minions = {}
+        table.insert(minions, most_expensive_card)
+        return minions
+    end
+    --print_to_log("no playable card")
+    return {}
+end
+
+
+local non_target_spell2 = function()
+
+    -- Get available crystals
+    local num_crystals = GetCrystals(OurHero)
+
+    -- Find a spell card we can cast
+    for i,card in ipairs(GetCards(Hand)) do
+        local entity = ConvertCardToEntity(card)
+        if IsSpell(entity) then
+            local card_cost = GetCost(entity)
+            if(card_cost <= num_crystals) then
+            	spells = {}
+            	table.insert(spells, card)
+                return spells
+            end
+        end
+    end
+
+	-- No spells to cast
+    return {}
+end
+
+
+-- Takes a list of cards in your hand and returns which actions to take
+-- Actions are performed and then method is invoked again until no actions left
+-- TODO: Right now only card actions are supported. Support more actions!
+function do_turn_action(cards)
+
+    print_to_log("Determining next turn action")
+
+    -- Check if there is a spell to cast
+    spell_cards = non_target_spell2()
+    if next(spell_cards) ~= nil then
+        return spell_cards
+    end
+
+    -- Check if there is a minion to drop
+    minion_cards = throw_random_minion2()
+    if next(minion_cards) ~= nil then
+        return minion_cards
+    end
+        
+    -- Nothing else to do
+    return {}
+end
+

@@ -36,6 +36,12 @@ namespace HearthstoneBot
         private DateTime delay_start = DateTime.Now;
         private long delay_length = 0;
 
+        // Queued actions
+        private List<Card> queuedActions = new List<Card>();
+
+        // Keep track of the last mode
+        private SceneMgr.Mode last_scene_mode = SceneMgr.Mode.STARTUP;
+
         public AIBot()
         {
             random = new System.Random();
@@ -346,6 +352,62 @@ namespace HearthstoneBot
             }
         }
 
+        private void performAction(Card card)
+        {
+            Log.log("Performing action - dropping card: " + card.GetEntity().GetName());
+            // TODO: Support more actions than just playing cards
+
+            // TODO: Queue these up as separate actions to allow for delay?
+            // Pickup card in hand
+            api.drop_card(card, true);
+            // Drop card on board
+            api.drop_card(card, false);
+
+            // Delay between each action
+            Delay(2000);
+        }
+
+        public void run_ai2()
+        {
+            try
+            {
+                Log.log("There are " + queuedActions.Count + " queued actions.");
+                // Perform queued actions first
+                if(queuedActions.Count > 0)
+                {
+                    var action = queuedActions[0];
+                    queuedActions.RemoveAt(0);
+                    performAction(action);
+                    return;
+                }
+
+                // Get hand cards
+                var cards = API.getOurPlayer().GetHandZone().GetCards().ToList<Card>();
+
+                Log.log("There are " + cards.Count + " cards in our hand.");
+
+                // Get initial actions to perform
+                Log.log("Calling turn_action lua function...");
+                var actions = api.turn_action(cards);
+                Log.log("The turn_action function returned " + actions.Count + " actions.");
+
+                // Queue up these actions
+                queuedActions.AddRange(actions);
+
+                if (queuedActions.Count == 0)
+                {
+                    // Done with turn actions
+                    end_turn();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.error("EXCEPTION");
+                Log.error(e.ToString());
+                Log.error(e.Message);
+            }
+        }
+
         private void gameplay_mode()
         {
             GameState gs = GameState.Get();
@@ -362,7 +424,7 @@ namespace HearthstoneBot
             // If it's not our turn
             else if (gs.IsLocalPlayerTurn() == true)
             {
-                run_ai();
+                run_ai2();
             }
         }
 
@@ -371,6 +433,15 @@ namespace HearthstoneBot
         {
             // Get current scene mode
             SceneMgr.Mode scene_mode = SceneMgr.Get().GetMode();
+
+            // If scene changes let's wait a few seconds
+            if (scene_mode != last_scene_mode)
+            {
+                Delay(5000);
+                last_scene_mode = scene_mode;
+                return;
+            }
+
             // Switch upon the mode
             switch (scene_mode)
             {

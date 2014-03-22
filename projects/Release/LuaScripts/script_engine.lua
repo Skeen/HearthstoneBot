@@ -34,3 +34,20 @@ function mulligan(cards)
 
     return replace
 end
+
+function turn_action(cards)
+
+    local old_function = coroutine.yield
+    coroutine.yield = function() end
+
+    __critical_pause = false
+    local actions = do_turn_action(cards)
+
+    if __critical_pause == true then
+        print_to_log("ERROR: CRITICAL PAUSE FUNCTION CALLED WITHIN CHOOSE ACTIONS")
+    end
+
+    coroutine.yield = old_function
+
+    return actions
+end

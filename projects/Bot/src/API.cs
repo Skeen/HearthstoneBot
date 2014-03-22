@@ -282,6 +282,23 @@ namespace HearthstoneBot
             }
         }
 
+        public List<Card> turn_action(List<Card> cards)
+        {
+            LuaFunction f = lua.GetFunction("turn_action");
+            if (f == null)
+            {
+                Log.log("Lua function not found!");
+                return null;
+            }
+            object[] args = f.Call(cards);
+
+            LuaTable table = args[0] as LuaTable;
+            
+            // TODO: Support actions other than just dropping cards
+            List<Card> actions = TableToCardList(table);
+            return actions;
+        }
+
         public List<Card> mulligan(List<Card> cards)
         {
             try
