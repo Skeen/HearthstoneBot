@@ -1,3 +1,5 @@
+dofile(script_path .. "AI_Config.lua")
+
 --[[
 -- Return a list of attack rating
 local battlefield_attacks = function()
@@ -155,17 +157,24 @@ local throw_random_minion = function()
     local most_expensive_card = nil
     local most_expensive_card_cost = 0
     local most_expensive_card_index = 0
+    local most_expensive_card_is_tank = false
     for i,card in ipairs(minion_cards) do
         --print_to_log("loop entry")
         local entity = ConvertCardToEntity(card)
         local card_cost = GetCost(entity)
+        local is_tank = HasTaunt(entity)
         --print_to_log("card cost = " .. card_cost)
         
         if((card_cost > most_expensive_card_cost) and (card_cost <= avaiable_crystals)) then
-            --print_to_log("new expensive card")
-            most_expensive_card_cost = card_cost
-            most_expensive_card = card
-            most_expensive_card_index = i
+            if (prefer_tank_minions == true) and (most_expensive_card_is_tank == true) and (is_tank == false) then
+                -- We don't want this, as this card is not a tank, so let's do nothing
+            else
+                --print_to_log("new expensive card")
+                most_expensive_card_cost = card_cost
+                most_expensive_card = card
+                most_expensive_card_index = i
+                most_expensive_card_is_tank = is_tank
+            end
         end
     end
     --print_to_log("post loop crystal")
