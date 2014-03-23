@@ -49,11 +49,13 @@ local nuke_hero = function()
     for i,card in ipairs(battlefield_cards) do
         local entity = ConvertCardToEntity(card)
         local can_attack = canEntityAttack(entity)
-
+		local actions = {}
         if (can_attack) then
             local enemy_hero_card = GetCard(EnemyHero)
-            DoAttack(card, enemy_hero_card)
+			table.insert(actions, AttackEnemy(card, enemy_hero_card))
         end
+
+		return actions
     end
 end
 --[[
@@ -120,18 +122,14 @@ local eliminate_tanks = function()
             end
 
             if (best_attacker ~= nil) then
-                DoAttack(best_attacker, enemy_card)
-                return true
+                return {AttackEnemy(best_attacker, enemy_card)}
             elseif (#our_attackers ~= 0) then
                 best_attacker = table.remove(our_attackers, 1)
-                DoAttack(best_attacker, enemy_card)
-                return true
-            else
-                return false;
+                return {AttackEnemy(best_attacker, enemy_card)}
             end
         end
     end
-    return false
+    return {}
 end
 
 local throw_random_minion = function()
@@ -365,8 +363,19 @@ function do_turn_action(cards)
     if next(minion_cards) ~= nil then
         return minion_cards
     end
-        
-    -- Nothing else to do
+
+	-- Destroy minions with taunt
+	tank_cards = eliminate_tanks()
+	if next(tank_cards) ~= nil then
+		return tank_cards
+	end
+
+	-- Attack enemy hero
+	nuke_actions = nuke_hero()
+	if next(nuke_actions) ~= nil then
+		return nuke_actions
+	end
+
+    -- No more actions to perform
     return {}
 end
-
