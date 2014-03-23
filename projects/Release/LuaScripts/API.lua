@@ -21,19 +21,16 @@ __critical_pause = false
 -----------------------------------------------------------
 -- Return a list of cards in a given region
 function GetCards(where)
-    coroutine.yield()
     return __csharp_cards(where)
 end
 
 -- Return a specific card
 function GetCard(where)
-    coroutine.yield()
     return __csharp_card(where)
 end
 
 -- Return the number of crystals available
 function GetCrystals(hero)
-    coroutine.yield()
     return __csharp_crystals(hero)
 end
 

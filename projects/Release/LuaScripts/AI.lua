@@ -133,143 +133,6 @@ local eliminate_tanks = function()
 end
 
 local throw_random_minion = function()
-    
-    local cards_on_hand = GetCards(Hand)
-    local minion_cards = {}
-    -- Find all minion cards
-    for i,card in ipairs(cards_on_hand) do
-        local entity = ConvertCardToEntity(card)
-        local is_minion = IsMinion(entity)
-        if is_minion then
-            table.insert(minion_cards, card)
-        end
-    end
-    
-    --print_to_log(#minion_cards .. " minions on hand")
-    -- Find the most expensive one, we can throw down
-    local avaiable_crystals = GetCrystals(OurHero)
-
-    --print_to_log("crystal")
-    local most_expensive_card = nil
-    local most_expensive_card_cost = 0
-    local most_expensive_card_index = 0
-    for i,card in ipairs(minion_cards) do
-        --print_to_log("loop entry")
-        local entity = ConvertCardToEntity(card)
-        local card_cost = GetCost(entity)
-        --print_to_log("card cost = " .. card_cost)
-        
-        if((card_cost > most_expensive_card_cost) and (card_cost <= avaiable_crystals)) then
-            --print_to_log("new expensive card")
-            most_expensive_card_cost = card_cost
-            most_expensive_card = card
-            most_expensive_card_index = i
-        end
-    end
-    --print_to_log("post loop crystal")
-    -- We found a card!
-    if most_expensive_card ~= nil then
-        print_to_log("playable card cost: " .. most_expensive_card_cost)
-        DropCard(most_expensive_card)
-        return true
-    end
-    --print_to_log("no playable card")
-    return false
-end
-
--- Only for non-targeted
--- TODO: Add a check for these heroes
--- NOTE: Will require an extension of the Lua API
---[[
-local use_hero_power = function()
-    local hero_power_card = GetCard(HeroPower)
-    local entity = ConvertCardToEntity(hero_power_card)
-
-    local cost = GetCost(entity)
-    local avaiable_crystals = GetCrystals(OurHero)
-    if (cost <= avaiable_crystals) then
-        __csharp_do_attack(hero_power_card)
-        __critical_pause = true
-        coroutine.yield()
-        __csharp_drop_card(hero_power_card, true)
-        __critical_pause = true
-        coroutine.yield()
-    end
-end
---]]
-
-local non_target_spell = function()
-    local cards_on_hand = GetCards(Hand)
-    local spell_cards = {}
-    -- Find all minion cards
-    for i,card in ipairs(cards_on_hand) do
-        local entity = ConvertCardToEntity(card)
-        local is_minion = IsSpell(entity)
-        if is_minion then
-            table.insert(spell_cards, card)
-        end
-    end
-
-    print_to_log(#spell_cards .. " spells on hand")
-    local avaiable_crystals = GetCrystals(OurHero)
-
-    for i,card in ipairs(spell_cards) do
-        local entity = ConvertCardToEntity(card)
-        local card_cost = GetCost(entity)
-
-        if(card_cost <= avaiable_crystals) then
-            DropCard(card)
-            return true
-        end
-    end
-    return false
-end
-
--- Do AI, returns nothing, takes nothing
-turn_start_function = function()
-
-    -- Try to run the AI 3 times, note this is a hacky fix
-    -- TODO: Do it the right way
-    for i=0,3 do
-        print_to_log("AI started" .. i)
-
-        -- Use all spells / secrets
-        while non_target_spell() do
-        end
-        
-        -- Throw all minions
-        while num_battlefield_minions() < 7 and throw_random_minion() do
-        end
-
-        -- Keep killing tanks, while we're able to
-        while eliminate_tanks() do
-        end
-
-        nuke_hero();
-
-        print_to_log("AI ended" .. i);
-    end
-    print_to_log("End of Turn Called");
-end
-
--- Mulligan function, should not call any critical pause functions
--- Returns a list of cards to be replaced
-function do_mulligan(cards)
-
-    replace = {}
-    
-    for i, card in ipairs(cards) do
-        local entity = ConvertCardToEntity(card)
-        if GetCost(entity) >= 4 then
-            table.insert(replace, card)
-        end
-    end
-
-    return replace
-end
-
-
-local throw_random_minion2 = function()
     -- Check if the battlefield is full
 	if num_battlefield_minions() >= 7 then
 	    return {}
@@ -320,8 +183,28 @@ local throw_random_minion2 = function()
     return minions
 end
 
+-- Only for non-targeted
+-- TODO: Add a check for these heroes
+-- NOTE: Will require an extension of the Lua API
+--[[
+local use_hero_power = function()
+    local hero_power_card = GetCard(HeroPower)
+    local entity = ConvertCardToEntity(hero_power_card)
 
-local non_target_spell2 = function()
+    local cost = GetCost(entity)
+    local avaiable_crystals = GetCrystals(OurHero)
+    if (cost <= avaiable_crystals) then
+        __csharp_do_attack(hero_power_card)
+        __critical_pause = true
+        coroutine.yield()
+        __csharp_drop_card(hero_power_card, true)
+        __critical_pause = true
+        coroutine.yield()
+    end
+end
+--]]
+
+local non_target_spell = function()
 
     -- Get available crystals
     local num_crystals = GetCrystals(OurHero)
@@ -344,7 +227,6 @@ local non_target_spell2 = function()
     return spells
 end
 
-
 -- Takes a list of cards in your hand and returns which actions to take
 -- Actions are performed and then method is invoked again until no actions left
 -- TODO: Right now only card actions are supported. Support more actions!
@@ -353,13 +235,13 @@ function do_turn_action(cards)
     print_to_log("Determining next turn action")
 
     -- Check if there is a spell to cast
-    spell_cards = non_target_spell2()
+    spell_cards = non_target_spell()
     if next(spell_cards) ~= nil then
         return spell_cards
     end
 
     -- Check if there is a minion to drop
-    minion_cards = throw_random_minion2()
+    minion_cards = throw_random_minion()
     if next(minion_cards) ~= nil then
         return minion_cards
     end
@@ -378,4 +260,20 @@ function do_turn_action(cards)
 
     -- No more actions to perform
     return {}
+end
+
+-- Mulligan function, should not call any critical pause functions
+-- Returns a list of cards to be replaced
+function do_mulligan(cards)
+
+    replace = {}
+    
+    for i, card in ipairs(cards) do
+        local entity = ConvertCardToEntity(card)
+        if GetCost(entity) >= 4 then
+            table.insert(replace, card)
+        end
+    end
+
+    return replace
 end

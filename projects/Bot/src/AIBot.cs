@@ -327,32 +327,7 @@ namespace HearthstoneBot
 		}
 
         // Called to invoke AI
-        private void run_ai()
-        {
-            // We're in normal game state, and it's our turn
-            try
-            {
-                // Run the AI, check if it requests a pause
-                api.run();
-                if(api.was_critical_pause_requested())
-                {
-                    // Delay 2.0 seconds
-                    Delay(2000);
-                }
-                if(api.was_end_turn_requested())
-                {
-                    // Go ahead and end the turn
-                    end_turn();
-                }
-            }
-            catch(Exception e)
-            {
-                Log.error("Exception: In api.run (AI function)");
-                Log.error(e.ToString());
-            }
-        }
-
-        public void run_ai2()
+        public void run_ai()
         {
             try
             {
@@ -417,7 +392,7 @@ namespace HearthstoneBot
             // If it's not our turn
             else if (gs.IsLocalPlayerTurn() == true)
             {
-                run_ai2();
+                run_ai();
             }
         }
 

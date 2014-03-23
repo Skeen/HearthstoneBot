@@ -375,36 +375,6 @@ namespace HearthstoneBot
             return end_turn_requested;
         }
 
-        public void run()
-        {
-            try
-            {
-                LuaFunction f = lua.GetFunction("turn_start");
-                if(f == null)
-                {
-                    Log.error("Lua function not found!");
-                    return;
-                }
-                object[] args = f.Call();
-                string error = (string) args[0];
-                if(error != null)
-                {
-                    Log.error("Internal Lua Exception");
-                    Log.error(error);
-                }
-            }
-            catch(LuaException e)
-            {
-                Log.error("EXCEPTION");
-                Log.error(e.ToString());
-                Log.error(e.Message);
-            }
-            catch(Exception e)
-            {
-                Log.error(e.ToString());
-            }
-        }
-
         public List<Action> turn_action(List<Card> cards)
         {
             LuaFunction f = lua.GetFunction("turn_action");
