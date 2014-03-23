@@ -1,5 +1,4 @@
 -- Should not be modified by user
-__end_turn = false
 
 function turn_action(cards)
     local actions = do_turn_action(cards)

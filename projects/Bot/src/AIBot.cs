@@ -144,10 +144,6 @@ namespace HearthstoneBot
             List<Card> cards = API.getOurPlayer().GetHandZone().GetCards().ToList<Card>();
             // Ask the AI scripting system, to figure which cards to replace
             List<Card> replace = api.mulligan(cards);
-            if(replace == null)
-            {
-                return false;
-            }
 
             // Toggle them as replaced
             foreach(Card current in replace)

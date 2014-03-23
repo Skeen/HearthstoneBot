@@ -366,20 +366,15 @@ namespace HearthstoneBot
             return critical_puase_requested;
         }
 
-        public bool was_end_turn_requested()
-        {
-            bool end_turn_requested = (bool) lua["__end_turn"];
-            lua["__end_turn"] = false;
-            return end_turn_requested;
-        }
-
+        /**
+         * Call the LUA turn_action method to decide what actions to take.
+         */
         public List<Action> turn_action(List<Card> cards)
         {
             LuaFunction f = lua.GetFunction("turn_action");
             if (f == null)
             {
-                Log.log("Lua function not found!");
-                return null;
+                throw new Exception("Failed to find the LUA function: turn_action");
             }
 
             // Call the LUA funciton and get teh results
@@ -387,6 +382,10 @@ namespace HearthstoneBot
 
             // Get teh first result as an LUA table
             LuaTable table = results[0] as LuaTable;
+            if (table == null)
+            {
+                throw new Exception("Failed to get results from LUA function: turn_action");
+            }
             
             // Convert the table to a list of actions
             List<Action> actions = TableToActions(table);
@@ -395,35 +394,21 @@ namespace HearthstoneBot
 
         public List<Card> mulligan(List<Card> cards)
         {
-            try
+            LuaFunction f = lua.GetFunction("mulligan");
+            if(f == null)
             {
-                LuaFunction f = lua.GetFunction("mulligan");
-                if(f == null)
-                {
-                    Log.log("Lua function not found!");
-                    return null;
-                }
-                LuaTable argument = CardListToTable(cards);
-                object[] args = f.Call(argument);
-                LuaTable replace = args[0] as LuaTable;
-                if(replace != null)
-                {
-                    List<Card> replace_list = TableToCardList(replace);
-                    return replace_list;
-                }
-                Log.log("NO VALID RETURN TYPE");
+                throw new Exception("Failed to find the LUA function: mulligan");
             }
-            catch(LuaException e)
+            LuaTable argument = CardListToTable(cards);
+            object[] results = f.Call(argument);
+            LuaTable replace = results[0] as LuaTable;
+            if (replace == null)
             {
-                Log.error("EXCEPTION");
-                Log.error(e.ToString());
-                Log.error(e.Message);
+                throw new Exception("Failed to get results from LUA function: mulligan");
             }
-            catch(Exception e)
-            {
-                Log.error(e.ToString());
-            }
-            return null;
+
+            List<Card> replace_list = TableToCardList(replace);
+            return replace_list;
         }
 
         public Entity __csharp_convert_to_entity(Card c)
