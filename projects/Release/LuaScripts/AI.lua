@@ -227,9 +227,8 @@ local non_target_spell = function()
     return spells
 end
 
--- Takes a list of cards in your hand and returns which actions to take
--- Actions are performed and then method is invoked again until no actions left
--- TODO: Right now only card actions are supported. Support more actions!
+-- Return a list of actions to perform.  Turn is ended when no actions are returned here.
+-- If actions are returned, the method will be invoked again after actions are performed.
 function do_turn_action(cards)
 
     print_to_log("Determining next turn action")

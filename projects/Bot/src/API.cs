@@ -46,9 +46,7 @@ namespace HearthstoneBot
                 lua.RegisterFunction("__csharp_entity_value", this, typeof(API).GetMethod("getEntityValue"));
 
                 // Utility functions
-                lua.RegisterFunction("__csharp_drop_card", this, typeof(API).GetMethod("drop_card"));
                 lua.RegisterFunction("__csharp_convert_to_entity", this, typeof(API).GetMethod("__csharp_convert_to_entity"));
-                lua.RegisterFunction("__csharp_do_attack", this, typeof(API).GetMethod("attack"));
 
                 // Function for creating actions (returned by turn_action function)
                 lua.RegisterFunction("__csharp_play_card", this, typeof(API).GetMethod("playCard"));

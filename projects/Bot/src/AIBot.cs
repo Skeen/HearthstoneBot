@@ -327,7 +327,7 @@ namespace HearthstoneBot
 		}
 
         // Called to invoke AI
-        public void run_ai()
+        private void run_ai()
         {
             try
             {
