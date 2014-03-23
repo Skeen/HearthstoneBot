@@ -49,6 +49,10 @@ namespace HearthstoneBot
                 lua.RegisterFunction("__csharp_drop_card", this, typeof(API).GetMethod("drop_card"));
                 lua.RegisterFunction("__csharp_convert_to_entity", this, typeof(API).GetMethod("__csharp_convert_to_entity"));
                 lua.RegisterFunction("__csharp_do_attack", this, typeof(API).GetMethod("attack"));
+
+                // Function for creating actions (returned by turn_action function)
+                lua.RegisterFunction("__csharp_play_card", this, typeof(API).GetMethod("playCard"));
+                lua.RegisterFunction("__csharp_attack_enemy", this, typeof(API).GetMethod("attackEnemy"));
                 
                 Log.log("Loading Main.lua...");
                 lua.DoFile(lua_script_path + "Main.lua");
@@ -65,6 +69,95 @@ namespace HearthstoneBot
                 Log.error(e.ToString());
             }
             Log.log("Scripts loaded constructed");
+        }
+
+        public abstract class Action
+        {
+            public abstract void perform();
+        }
+
+        public class CardAction : Action
+        {
+            // The card in your hand
+            private Card card;
+
+            // Whether to pickup or drop the card
+            // Note: You must pick up card first before dropping
+            private bool pickup;
+
+            public CardAction(Card card, bool pickup)
+            {
+                this.card = card;
+                this.pickup = pickup;
+            }
+
+            /**
+             * Implementation to perform the action.
+             */
+            public override void perform()
+            {
+                drop_card(card, pickup);
+            }
+
+            public override string ToString()
+            {
+                return "CardAction(card=" + card.GetEntity().GetName() + ", pickup=" + pickup + ")";
+            }
+        }
+
+        /**
+         * Returns a list of actions to play a card from your hand.
+         */
+        public LuaTable playCard(Card card)
+        {
+            LuaTable tab = CreateTable();
+            tab[1] = new CardAction(card, true);
+            tab[2] = new CardAction(card, false);
+            return tab;
+        }
+
+        public class AttackAction : Action
+        {
+            // The card on the battle field - can be either friendly minion or enemy target
+            // Note: Attack action must be taken with friendly minion first before enemy target.
+            private Card card;
+
+            public AttackAction(Card card)
+            {
+                this.card = card;
+            }
+
+            public Card getCard()
+            {
+                return card;
+            }
+
+            public override void perform()
+            {
+                attack(card);
+            }
+
+            public override string ToString()
+            {
+                return "AttackAction(card=" + card.GetEntity().GetName() + ")";
+            }
+        }
+
+        public void performAction(Action action)
+        {
+            Log.log("Performing action: " + action);
+            action.perform();
+        }
+
+        /**
+         * Returns a list of actions to play a spell or minion card with no target.
+         */
+        public LuaTable attackEnemy(Card friendly, Card enemy)
+        {
+            LuaTable tab = CreateTable();
+            tab[1] = new AttackAction(friendly);
+            tab[2] = new AttackAction(enemy);
+            return tab;
         }
 
         private LuaTable CreateTable()
@@ -99,6 +192,36 @@ namespace HearthstoneBot
             }
 
             return list;
+        }
+
+        /**
+         * Converts an LUA table where each item is another LUA table containing actions into a flat list of actions.
+         */
+        private List<Action> TableToActions(LuaTable tab)
+        {
+            List<Action> actions = new List<Action>();
+
+            for(int i=1; ; i++)
+            {
+                LuaTable item = tab[i] as LuaTable;
+                if (item == null)
+                {
+                    break;
+                }
+
+                for (int j=1; ; j++)
+                {
+                    Action action = item[j] as Action;
+                    if (action == null)
+                    {
+                        break;
+                    }
+
+                    actions.Add(action);
+                }
+            }
+
+            return actions;
         }
 
         public LuaTable getCards(string where)
@@ -282,7 +405,7 @@ namespace HearthstoneBot
             }
         }
 
-        public List<Card> turn_action(List<Card> cards)
+        public List<Action> turn_action(List<Card> cards)
         {
             LuaFunction f = lua.GetFunction("turn_action");
             if (f == null)
@@ -290,12 +413,15 @@ namespace HearthstoneBot
                 Log.log("Lua function not found!");
                 return null;
             }
-            object[] args = f.Call(cards);
 
-            LuaTable table = args[0] as LuaTable;
+            // Call the LUA funciton and get teh results
+            object[] results = f.Call(cards);
+
+            // Get teh first result as an LUA table
+            LuaTable table = results[0] as LuaTable;
             
-            // TODO: Support actions other than just dropping cards
-            List<Card> actions = TableToCardList(table);
+            // Convert the table to a list of actions
+            List<Action> actions = TableToActions(table);
             return actions;
         }
 
@@ -347,14 +473,14 @@ namespace HearthstoneBot
             return GameState.Get().GetFirstOpponentPlayer(getOurPlayer());
         }
 
-		public void attack(Card c)
+		public static void attack(Card c)
 		{
 			Log.log("Attack: " + c.GetEntity().GetName());
             
             PrivateHacker.HandleClickOnCardInBattlefield(c);
 		}
 
-        public bool drop_held_card(int requested_zone_position = 1) 
+        public static bool drop_held_card(int requested_zone_position = 1) 
         {
             try
             {
@@ -368,7 +494,7 @@ namespace HearthstoneBot
             return false;
         }
 
-        public bool drop_held_card_worker(int requested_zone_position)
+        public static bool drop_held_card_worker(int requested_zone_position)
         {
             PegCursor.Get().SetMode(PegCursor.Mode.STOPDRAG);
 
@@ -509,7 +635,7 @@ namespace HearthstoneBot
             return true;
         }
 
-		public bool drop_card(Card c, bool pickup)
+		public static bool drop_card(Card c, bool pickup)
 		{
 			Log.log("Dropped card: " + c.GetEntity().GetName());
 

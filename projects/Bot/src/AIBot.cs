@@ -37,7 +37,7 @@ namespace HearthstoneBot
         private long delay_length = 0;
 
         // Queued actions
-        private List<Card> queuedActions = new List<Card>();
+        private List<API.Action> queuedActions = new List<API.Action>();
 
         // Keep track of the last mode
         private SceneMgr.Mode last_scene_mode = SceneMgr.Mode.STARTUP;
@@ -352,21 +352,6 @@ namespace HearthstoneBot
             }
         }
 
-        private void performAction(Card card)
-        {
-            Log.log("Performing action - dropping card: " + card.GetEntity().GetName());
-            // TODO: Support more actions than just playing cards
-
-            // TODO: Queue these up as separate actions to allow for delay?
-            // Pickup card in hand
-            api.drop_card(card, true);
-            // Drop card on board
-            api.drop_card(card, false);
-
-            // Delay between each action
-            Delay(2000);
-        }
-
         public void run_ai2()
         {
             try
@@ -375,9 +360,17 @@ namespace HearthstoneBot
                 // Perform queued actions first
                 if(queuedActions.Count > 0)
                 {
-                    var action = queuedActions[0];
+                    // Perform the first queued action
+                    API.Action action = queuedActions[0];
                     queuedActions.RemoveAt(0);
-                    performAction(action);
+                    Log.log("Performing action..... " + action.ToString());
+
+                    api.performAction(action);
+
+                    Log.log("PerformED action.....");
+
+                    // Delay between each action
+                    Delay(2000);
                     return;
                 }
 

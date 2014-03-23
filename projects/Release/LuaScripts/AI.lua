@@ -308,16 +308,18 @@ local throw_random_minion2 = function()
             most_expensive_card_index = i
         end
     end
+
+	-- Build list of minions to play
+	minions = {}
+
     --print_to_log("post loop crystal")
     -- We found a card!
     if most_expensive_card ~= nil then
         print_to_log("playable card cost: " .. most_expensive_card_cost)
-        minions = {}
-        table.insert(minions, most_expensive_card)
-        return minions
+        table.insert(minions, PlayCard(most_expensive_card))
     end
-    --print_to_log("no playable card")
-    return {}
+
+    return minions
 end
 
 
@@ -326,21 +328,22 @@ local non_target_spell2 = function()
     -- Get available crystals
     local num_crystals = GetCrystals(OurHero)
 
+	-- Build list of spells to play
+	spells = {}
+
     -- Find a spell card we can cast
     for i,card in ipairs(GetCards(Hand)) do
         local entity = ConvertCardToEntity(card)
         if IsSpell(entity) then
             local card_cost = GetCost(entity)
             if(card_cost <= num_crystals) then
-            	spells = {}
-            	table.insert(spells, card)
-                return spells
+            	table.insert(spells, PlayCard(card))
+				break
             end
         end
     end
 
-	-- No spells to cast
-    return {}
+    return spells
 end
 
 

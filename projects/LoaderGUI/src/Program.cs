@@ -335,6 +335,7 @@ namespace HearthstoneBot
                              "PRATICE_NORMAL",    "PRATICE_EXPERT"};
 
             cmb.Items.AddRange(game_modes);
+            cmb.SelectedIndex = 2;
             cmb.Name = "GameMode";
             cmb.Size = new Size(btn5.Width*2, btn5.Height);
 
