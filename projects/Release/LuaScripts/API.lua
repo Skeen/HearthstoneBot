@@ -13,9 +13,6 @@ EnemyHero         = "ENEMY_HERO"
 -- The above, plus the below, is for the getCard function
 HeroPower         = "HERO_POWER"
 
--- For controlling pauses (2 second pause on next yield, if set)
-__critical_pause = false
-
 -----------------------------------------------------------
 -- AI FUNCTIONS BELOW, CALL THESE FOR SERVICE            --
 -----------------------------------------------------------

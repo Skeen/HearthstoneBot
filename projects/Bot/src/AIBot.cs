@@ -328,17 +328,14 @@ namespace HearthstoneBot
             try
             {
                 Log.log("There are " + queuedActions.Count + " queued actions.");
+
                 // Perform queued actions first
                 if(queuedActions.Count > 0)
                 {
-                    // Perform the first queued action
+                    // Dequeue first execution and perform it
                     API.Action action = queuedActions[0];
                     queuedActions.RemoveAt(0);
-                    Log.log("Performing action..... " + action.ToString());
-
                     api.performAction(action);
-
-                    Log.log("PerformED action.....");
 
                     // Delay between each action
                     Delay(2000);

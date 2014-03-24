@@ -145,6 +145,7 @@ namespace HearthstoneBot
         {
             Log.log("Performing action: " + action);
             action.perform();
+            Log.log("Performed action: " + action);
         }
 
         /**
@@ -357,13 +358,6 @@ namespace HearthstoneBot
                 Log.error(e.ToString());
                 return -1;
             }
-        }
-
-        public bool was_critical_pause_requested()
-        {
-            bool critical_puase_requested = (bool) lua["__critical_pause"];
-            lua["__critical_pause"] = false;
-            return critical_puase_requested;
         }
 
         /**

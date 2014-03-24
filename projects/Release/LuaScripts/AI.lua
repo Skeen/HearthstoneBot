@@ -50,11 +50,11 @@ local nuke_hero = function()
         local entity = ConvertCardToEntity(card)
         local can_attack = canEntityAttack(entity)
         if (can_attack) then
-            return {GetCard(EnemyHero)}
+            return {AttackEnemy(card, GetCard(EnemyHero))}
         end
-
-		return {}
     end
+	
+	return {}
 end
 --[[
 local get_enemy_tanks = function()
@@ -227,7 +227,7 @@ end
 
 -- Return a list of actions to perform.  Turn is ended when no actions are returned here.
 -- If actions are returned, the method will be invoked again after actions are performed.
-function do_turn_action(cards)
+function choose_turn_actions(cards)
 
     print_to_log("Determining next turn action")
 
@@ -261,7 +261,7 @@ end
 
 -- Mulligan function, should not call any critical pause functions
 -- Returns a list of cards to be replaced
-function do_mulligan(cards)
+function choose_mulligan_cards(cards)
 
     replace = {}
     
