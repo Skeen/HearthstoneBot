@@ -49,13 +49,11 @@ local nuke_hero = function()
     for i,card in ipairs(battlefield_cards) do
         local entity = ConvertCardToEntity(card)
         local can_attack = canEntityAttack(entity)
-		local actions = {}
         if (can_attack) then
-            local enemy_hero_card = GetCard(EnemyHero)
-			table.insert(actions, AttackEnemy(card, enemy_hero_card))
+            return {GetCard(EnemyHero)}
         end
 
-		return actions
+		return {}
     end
 end
 --[[
