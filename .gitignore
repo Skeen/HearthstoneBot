@@ -222,3 +222,5 @@ build/*
 *.stackdump
 *.sconsign.dblite
 *Assembly-CSharp*
+*.csproj
+*.sln
