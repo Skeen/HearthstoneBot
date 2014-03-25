@@ -74,8 +74,6 @@ namespace HearthstoneBot
                 // Simply return, for more time to pass
                 return;
             }
-            // Delay has been waited out, when we get here
-            //Delay(500);
 
             // Try to run the main loop
 			try
@@ -88,8 +86,9 @@ namespace HearthstoneBot
 			}
 			catch(Exception e)
 			{
-                Log.error("Exception, in AI.update()");
+                Log.error("Exception in AI: " + e.Message);
                 Log.error(e.ToString());
+                Delay(10000);
 			}
         }
 
@@ -127,39 +126,27 @@ namespace HearthstoneBot
             // Return the corresponding ID
             return AI_Selected[index];
         }
-        
+
         // Return whether Mulligan was done
-		private bool mulligan()
+		private void mulligan()
 		{
-            // Check that the button exists and is enabled
-			if (GameState.Get().IsMulliganManagerActive() == false ||
-                MulliganManager.Get() == null /*||
-                MulliganManager.Get().GetMulliganButton() == null ||
-                MulliganManager.Get().GetMulliganButton().IsEnabled() == false*/)
-			{
-				return false;
-			}
-            
             // Get hand cards
             List<Card> cards = API.getOurPlayer().GetHandZone().GetCards().ToList<Card>();
             // Ask the AI scripting system, to figure which cards to replace
             List<Card> replace = api.mulligan(cards);
 
             // Toggle them as replaced
-            foreach(Card current in replace)
+            foreach (Card current in replace)
             {
                 MulliganManager.Get().ToggleHoldState(current);
             }
 
             // End mulligan
             MulliganManager.Get().EndMulligan();
-			end_turn();
+            end_turn();
 
             // Report progress
-			Log.say("Mulligan Ended : " + replace.Count + " cards changed");
-            // Delay 5 seconds
-            Delay(5000);
-			return true;
+            Log.say("Mulligan Ended : " + replace.Count + " cards changed");
 		}
 
         // Welcome / login screen
@@ -188,9 +175,6 @@ namespace HearthstoneBot
             {
                 return;
             }
-            // Delay 5 seconds for loading and such
-            // TODO: Smarter delaying
-            Delay(5000);
 
             // If we're not set to the right mode, now is the time to do so
             // Note; This does not update the GUI, only the internal state
@@ -198,6 +182,7 @@ namespace HearthstoneBot
             if(is_ranked != ranked)
             {
                 Options.Get().SetBool(Option.IN_RANKED_PLAY_MODE, ranked);
+                Delay(3000);
                 return;
             }
 
@@ -244,9 +229,6 @@ namespace HearthstoneBot
             {
                 return;
             }
-            // Delay 5 seconds for loading and such
-            // TODO: Smarter delaying
-            Delay(5000);
 
             Log.log("Joining game in practice mode, expert = " + expert);
 
@@ -262,58 +244,33 @@ namespace HearthstoneBot
             just_joined = true;
         }
 
-        // Called when a game is in mulligan state
-        private void do_mulligan()
-        {
-            // Delay 10 seconds
-            Delay(5000);
-
-            try
-            {
-                mulligan();
-            }
-            catch(Exception e)
-            {
-                Log.error("Exception: In mulligan function");
-                Log.error(e.ToString());
-            }
-        }
-
         // Called when a game is ended
         private void game_over()
         {
-            // Delay 10 seconds
+            // Write why the game ended
+            if (API.getEnemyPlayer().GetHero().GetRemainingHP() <= 0)
+            {
+                Log.say("Victory!");
+            }
+            else if (API.getOurPlayer().GetHero().GetRemainingHP() <= 0)
+            {
+                Log.say("Defeat...");
+            }
+            else
+            {
+                Log.say("Draw..?");
+            }
+
+            // Click through end screen info (rewards, and such)
+            if (EndGameScreen.Get() != null)
+            {
+                EndGameScreen.Get().m_hitbox.TriggerRelease();
+
+                //EndGameScreen.Get().ContinueEvents();
+            }
+
+            // Delay 10 seconds after this method
             Delay(10000);
-            // Try to move on
-            try
-            {
-                // Write why the game ended
-                if (API.getEnemyPlayer().GetHero().GetRemainingHP() <= 0)
-                {
-                    Log.say("Victory!");
-                }
-                else if (API.getOurPlayer().GetHero().GetRemainingHP() <= 0)
-                {
-                    Log.say("Defeat...");
-                }
-                else
-                {
-                    Log.say("Draw..?");
-                }
-
-                // Click through end screen info (rewards, and such)
-                if (EndGameScreen.Get() != null)
-                {
-                    EndGameScreen.Get().m_hitbox.TriggerRelease();
-
-                    //EndGameScreen.Get().ContinueEvents();
-                }
-            }
-            catch(Exception e)
-            {
-                Log.error("Exception: In endgame function");
-                Log.error(e.ToString());
-            }
         }
 
         private void end_turn()
@@ -371,10 +328,21 @@ namespace HearthstoneBot
         private void gameplay_mode()
         {
             GameState gs = GameState.Get();
+
             // If we're in mulligan
             if (gs.IsMulliganPhase())
             {
-                do_mulligan();
+                Log.debug("Mulligan phase.");
+                if (MulliganManager.Get().IsMulliganActive())
+                {
+                    Log.debug("Mulligan is active.");
+                    if (MulliganManager.Get().GetMulliganButton().IsEnabled())
+                    {
+                        Log.debug("Mulligan button is enabled");
+                        mulligan();
+                    }
+                }
+                Delay(1000);
             }
             // If the game is over
             else if (gs.IsGameOver())
@@ -382,7 +350,7 @@ namespace HearthstoneBot
                 game_over();
             }
             // If it's not our turn
-            else if (gs.IsLocalPlayerTurn() == true)
+            else if (gs.IsLocalPlayerTurn())
             {
                 run_ai();
             }
@@ -397,8 +365,8 @@ namespace HearthstoneBot
             // If scene changes let's wait a few seconds
             if (scene_mode != last_scene_mode)
             {
-                Delay(5000);
                 last_scene_mode = scene_mode;
+                Delay(5000);
                 return;
             }
 
@@ -414,10 +382,7 @@ namespace HearthstoneBot
                 case SceneMgr.Mode.CREDITS:
                     // Enter MainMenu
                     SceneMgr.Get().SetNextMode(SceneMgr.Mode.HUB);
-                    // Delay 5 seconds for loading and such
-                    // TODO: Smarter delaying
-                    Delay(5000);
-                    return;
+                    break;
 
                 // Errors, nothing to do
                 case SceneMgr.Mode.INVALID:
@@ -433,7 +398,6 @@ namespace HearthstoneBot
 
                 // Login screen
                 case SceneMgr.Mode.LOGIN:
-                    Delay(500);
                     // Click through quests
                     login_mode();
                     break;
@@ -456,16 +420,13 @@ namespace HearthstoneBot
                             break;
 
                         default:
-                            Log.say("Unknown Game Mode!", true);
-                            return;
+                           throw new Exception("Unknown Game Mode!");
                     }
-                    // Delay 5 seconds for loading and such
-                    // TODO: Smarter delaying
-                    Delay(5000);
                     break;
 
                 // In game
                 case SceneMgr.Mode.GAMEPLAY:
+
                     // Handle Gamplay
                     gameplay_mode();
                     just_joined = false;
@@ -492,8 +453,7 @@ namespace HearthstoneBot
                             return;
 
                         default:
-                            Log.say("Unknown Game Mode!", true);
-                            return;
+                            throw new Exception("Unknown Game Mode!");
                     }
 
                     // Play against AI
@@ -521,8 +481,7 @@ namespace HearthstoneBot
                             break;
 
                         default:
-                            Log.say("Unknown Game Mode!", true);
-                            return;
+                            throw new Exception("Unknown Game Mode!");
                     }
 
                     // Play against humans (or bots)
@@ -531,7 +490,7 @@ namespace HearthstoneBot
 
                 default:
                     Log.say("Unknown SceneMgr State!", true);
-                    return;
+                    break;
             }
         }
     }
