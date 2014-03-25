@@ -363,9 +363,8 @@ namespace HearthstoneBot
             }
             catch (Exception e)
             {
-                Log.error("EXCEPTION");
+                Log.error("Exception in run_ai: " + e.Message);
                 Log.error(e.ToString());
-                Log.error(e.Message);
             }
         }
 

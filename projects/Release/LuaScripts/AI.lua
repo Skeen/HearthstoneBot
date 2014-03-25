@@ -216,22 +216,18 @@ local non_target_spell = function()
     -- Get available crystals
     local num_crystals = GetCrystals(OurHero)
 
-	-- Build list of spells to play
-	spells = {}
-
     -- Find a spell card we can cast
     for i,card in ipairs(GetCards(Hand)) do
         local entity = ConvertCardToEntity(card)
         if IsSpell(entity) then
             local card_cost = GetCost(entity)
             if(card_cost <= num_crystals) then
-            	table.insert(spells, PlayCard(card))
-				break
+            	return {PlayCard(card)}
             end
         end
     end
 
-    return spells
+    return {}
 end
 
 -- Return a list of actions to perform.  Turn is ended when no actions are returned here.

@@ -69,9 +69,9 @@ namespace HearthstoneBot
             Log.log("Scripts loaded constructed");
         }
 
-        public abstract class Action
+        public interface Action
         {
-            public abstract void perform();
+            void perform();
         }
 
         public class CardAction : Action
@@ -92,7 +92,7 @@ namespace HearthstoneBot
             /**
              * Implementation to perform the action.
              */
-            public override void perform()
+            public void perform()
             {
                 drop_card(card, pickup);
             }
@@ -130,7 +130,7 @@ namespace HearthstoneBot
                 return card;
             }
 
-            public override void perform()
+            public void perform()
             {
                 attack(card);
             }
