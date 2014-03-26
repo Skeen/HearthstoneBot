@@ -1,6 +1,6 @@
 -- Should not be modified by user
 
-function turn_action(cards)
+function turn(cards)
     local actions = choose_turn_actions(cards)
     return actions
 end

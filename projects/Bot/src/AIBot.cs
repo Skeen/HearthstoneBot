@@ -37,7 +37,7 @@ namespace HearthstoneBot
         private long delay_length = 0;
 
         // Queued actions
-        private List<API.Action> queuedActions = new List<API.Action>();
+        private List<Action> queuedActions = new List<Action>();
 
         // Keep track of the last mode
         private SceneMgr.Mode last_scene_mode = SceneMgr.Mode.STARTUP;
@@ -290,9 +290,9 @@ namespace HearthstoneBot
                 if(queuedActions.Count > 0)
                 {
                     // Dequeue first execution and perform it
-                    API.Action action = queuedActions[0];
+                    Action action = queuedActions[0];
                     queuedActions.RemoveAt(0);
-                    int delay = api.performAction(action);
+                    int delay = api.PerformAction(action);
 
                     // Delay between each action
                     Delay(delay);
@@ -305,9 +305,9 @@ namespace HearthstoneBot
                 Log.log("There are " + cards.Count + " cards in our hand.");
 
                 // Get initial actions to perform
-                Log.log("Calling turn_action lua function...");
-                var actions = api.turn_action(cards);
-                Log.log("The turn_action function returned " + actions.Count + " actions.");
+                Log.log("Calling turn function...");
+                var actions = api.turn(cards);
+                Log.log("The turn function returned " + actions.Count + " actions.");
 
                 // Queue up these actions
                 queuedActions.AddRange(actions);

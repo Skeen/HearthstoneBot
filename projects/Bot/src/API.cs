@@ -49,8 +49,8 @@ namespace HearthstoneBot
                 lua.RegisterFunction("__csharp_convert_to_entity", this, typeof(API).GetMethod("__csharp_convert_to_entity"));
 
                 // Function for creating actions (returned by turn_action function)
-                lua.RegisterFunction("__csharp_play_card", this, typeof(API).GetMethod("playCard"));
-                lua.RegisterFunction("__csharp_attack_enemy", this, typeof(API).GetMethod("attackEnemy"));
+                lua.RegisterFunction("__csharp_play_card", this, typeof(API).GetMethod("PlayCard"));
+                lua.RegisterFunction("__csharp_attack_enemy", this, typeof(API).GetMethod("AttackEnemy"));
                 
                 Log.log("Loading Main.lua...");
                 lua.DoFile(lua_script_path + "Main.lua");
@@ -69,57 +69,11 @@ namespace HearthstoneBot
             Log.log("Scripts loaded constructed");
         }
 
-        public interface Action
-        {
-            /**
-             * Perform the action.
-             */
-            void perform();
-
-            /**
-             * Delay after taking action.
-             */
-            int delay();
-        }
-
-        public class CardAction : Action
-        {
-            // The card in your hand
-            private Card card;
-
-            // Whether to pickup or drop the card
-            // Note: You must pick up card first before dropping
-            private bool pickup;
-
-            public CardAction(Card card, bool pickup)
-            {
-                this.card = card;
-                this.pickup = pickup;
-            }
-
-            /**
-             * Implementation to perform the action.
-             */
-            public void perform()
-            {
-                drop_card(card, pickup);
-            }
-
-            public int delay()
-            {
-                return 2000;
-            }
-
-            public override string ToString()
-            {
-                return "CardAction(card=" + card.GetEntity().GetName() + ", pickup=" + pickup + ")";
-            }
-        }
 
         /**
          * Returns a list of actions to play a card from your hand.
          */
-        public LuaTable playCard(Card card)
+        public LuaTable PlayCard(Card card)
         {
             LuaTable tab = CreateTable();
             tab[1] = new CardAction(card, true);
@@ -127,75 +81,10 @@ namespace HearthstoneBot
             return tab;
         }
 
-        public class AttackAction : Action
-        {
-            // The card on the battle field - can be either friendly minion or enemy target
-            // Note: Attack action must be taken with friendly minion first before enemy target.
-            private Card card;
-
-            public AttackAction(Card card)
-            {
-                this.card = card;
-            }
-
-            public Card getCard()
-            {
-                return card;
-            }
-
-            public void perform()
-            {
-                attack(card);
-            }
-
-            public int delay()
-            {
-                return 2000;
-            }
-
-            public override string ToString()
-            {
-                return "AttackAction(card=" + card.GetEntity().GetName() + ")";
-            }
-        }
-
-        public class MouseOverCard : Action
-        {
-            private Card card;
-
-            public MouseOverCard(Card card)
-            {
-                this.card = card;
-            }
-
-            public int delay()
-            {
-                return 1000;
-            }
-
-            public void perform()
-            {
-                PrivateHacker.HandleMouseOverCard(card);
-            }
-        }
-
-        public class MouseOffCard : Action
-        {
-            public void perform()
-            {
-                PrivateHacker.HandleMouseOffCard();
-            }
-
-            public int delay()
-            {
-                return 500;
-            }
-        }
-
         /**
          * Performs the action and returns the time to wait before performing the next action.
          */
-        public int performAction(Action action)
+        public int PerformAction(Action action)
         {
             Log.log("Performing action: " + action);
             action.perform();
@@ -206,7 +95,7 @@ namespace HearthstoneBot
         /**
          * Returns a list of actions to play a spell or minion card with no target.
          */
-        public LuaTable attackEnemy(Card friendly, Card enemy)
+        public LuaTable AttackEnemy(Card friendly, Card enemy)
         {
             LuaTable tab = CreateTable();
             tab[1] = new AttackAction(friendly);
@@ -416,11 +305,11 @@ namespace HearthstoneBot
         }
 
         /**
-         * Call the LUA turn_action method to decide what actions to take.
+         * Call the LUA turn method to decide what actions to take.
          */
-        public List<Action> turn_action(List<Card> cards)
+        public List<Action> turn(List<Card> cards)
         {
-            LuaFunction f = lua.GetFunction("turn_action");
+            LuaFunction f = lua.GetFunction("turn");
             if (f == null)
             {
                 throw new Exception("Failed to find the LUA function: turn_action");
