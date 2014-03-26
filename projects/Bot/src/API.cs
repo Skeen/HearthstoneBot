@@ -71,7 +71,15 @@ namespace HearthstoneBot
 
         public interface Action
         {
+            /**
+             * Perform the action.
+             */
             void perform();
+
+            /**
+             * Delay after taking action.
+             */
+            int delay();
         }
 
         public class CardAction : Action
@@ -95,6 +103,11 @@ namespace HearthstoneBot
             public void perform()
             {
                 drop_card(card, pickup);
+            }
+
+            public int delay()
+            {
+                return 2000;
             }
 
             public override string ToString()
@@ -135,17 +148,59 @@ namespace HearthstoneBot
                 attack(card);
             }
 
+            public int delay()
+            {
+                return 2000;
+            }
+
             public override string ToString()
             {
                 return "AttackAction(card=" + card.GetEntity().GetName() + ")";
             }
         }
 
-        public void performAction(Action action)
+        public class MouseOverCard : Action
+        {
+            private Card card;
+
+            public MouseOverCard(Card card)
+            {
+                this.card = card;
+            }
+
+            public int delay()
+            {
+                return 1000;
+            }
+
+            public void perform()
+            {
+                PrivateHacker.HandleMouseOverCard(card);
+            }
+        }
+
+        public class MouseOffCard : Action
+        {
+            public void perform()
+            {
+                PrivateHacker.HandleMouseOffCard();
+            }
+
+            public int delay()
+            {
+                return 500;
+            }
+        }
+
+        /**
+         * Performs the action and returns the time to wait before performing the next action.
+         */
+        public int performAction(Action action)
         {
             Log.log("Performing action: " + action);
             action.perform();
             Log.log("Performed action: " + action);
+            return action.delay();
         }
 
         /**

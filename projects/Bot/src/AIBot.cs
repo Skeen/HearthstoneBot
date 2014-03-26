@@ -292,10 +292,10 @@ namespace HearthstoneBot
                     // Dequeue first execution and perform it
                     API.Action action = queuedActions[0];
                     queuedActions.RemoveAt(0);
-                    api.performAction(action);
+                    int delay = api.performAction(action);
 
                     // Delay between each action
-                    Delay(2000);
+                    Delay(delay);
                     return;
                 }
 

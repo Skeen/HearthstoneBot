@@ -33,6 +33,20 @@ namespace HearthstoneBot
             dynMethod.Invoke(input_mgr, new object[] { ob });
         }
 
+        public static void HandleMouseOverCard(Card c)
+        {
+            InputManager input_mgr = InputManager.Get();
+            MethodInfo dynMethod = input_mgr.GetType().GetMethod("HandleMouseOverCard", BindingFlags.NonPublic | BindingFlags.Instance);
+            dynMethod.Invoke(input_mgr, new object[] { c });
+        }
+
+        public static void HandleMouseOffCard()
+        {
+            InputManager input_mgr = InputManager.Get();
+            MethodInfo dynMethod = input_mgr.GetType().GetMethod("HandleMouseOffCard", BindingFlags.NonPublic | BindingFlags.Instance);
+            dynMethod.Invoke(input_mgr, new object[] { });
+        }
+
         public static bool PlayPowerUpSpell(Card c)
         {
             InputManager input_mgr = InputManager.Get();
