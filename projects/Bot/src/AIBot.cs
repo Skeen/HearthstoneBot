@@ -159,6 +159,9 @@ namespace HearthstoneBot
                 // Emulate a next click
                 WelcomeQuests.Get().m_clickCatcher.TriggerRelease();
             }
+
+            // Delay after clicking quests
+            Delay(5000);
         }
 
         bool just_joined = false;
@@ -325,6 +328,13 @@ namespace HearthstoneBot
             }
         }
 
+        // Used to manage delays for some phases
+        private bool was_in_mulligan = false;
+        private bool was_my_turn = false;
+
+        // Keep track of if we ended mulligan
+        private bool mulligan_ended = false;
+
         private void gameplay_mode()
         {
             GameState gs = GameState.Get();
@@ -332,28 +342,46 @@ namespace HearthstoneBot
             // If we're in mulligan
             if (gs.IsMulliganPhase())
             {
-                Log.debug("Mulligan phase.");
-                if (MulliganManager.Get().IsMulliganActive())
+                if (was_in_mulligan && !mulligan_ended)
                 {
-                    Log.debug("Mulligan is active.");
-                    if (MulliganManager.Get().GetMulliganButton().IsEnabled())
-                    {
-                        Log.debug("Mulligan button is enabled");
-                        mulligan();
-                    }
+                    mulligan();
+                    mulligan_ended = true;
+                    Delay(1000);
                 }
-                Delay(1000);
+                else
+                {
+                    was_in_mulligan = true;
+                    Delay(15000);
+                }
+                return;
             }
             // If the game is over
             else if (gs.IsGameOver())
             {
                 game_over();
             }
-            // If it's not our turn
+            // If it's our turn
             else if (gs.IsLocalPlayerTurn())
             {
+                // If it was not our turn last tick
+                if (!was_my_turn)
+                {
+                    // Wait extra time for turn to start
+                    was_my_turn = true;
+                    Delay(5000);
+                    return;
+                }
+
                 run_ai();
             }
+            else
+            {
+                was_my_turn = false;
+            }
+
+            // Reset variables
+            was_in_mulligan = false;
+            mulligan_ended = false;
         }
 
         // Run a single AI tick

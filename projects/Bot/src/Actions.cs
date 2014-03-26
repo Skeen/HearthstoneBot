@@ -84,37 +84,4 @@ namespace HearthstoneBot
             return "AttackAction(card=" + card.GetEntity().GetName() + ")";
         }
     }
-
-    public class MouseOverCard : Action
-    {
-        private Card card;
-
-        public MouseOverCard(Card card)
-        {
-            this.card = card;
-        }
-
-        public int delay()
-        {
-            return 1000;
-        }
-
-        public void perform()
-        {
-            PrivateHacker.HandleMouseOverCard(card);
-        }
-    }
-
-    public class MouseOffCard : Action
-    {
-        public void perform()
-        {
-            PrivateHacker.HandleMouseOffCard();
-        }
-
-        public int delay()
-        {
-            return 500;
-        }
-    }
 }
