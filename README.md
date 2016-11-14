@@ -1,3 +1,11 @@
+## DISCONTINUED
+
+https://github.com/HearthSim/Hearthstone-Deck-Tracker
+
+May be a useful project for bot building.
+
+## Old README
+
 This project is divided into 4 parts.
 
 * The bot plugin (Bot.dll), found at projects/Bot
