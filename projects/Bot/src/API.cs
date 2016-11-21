@@ -46,9 +46,11 @@ namespace HearthstoneBot
                 lua.RegisterFunction("__csharp_entity_value", this, typeof(API).GetMethod("getEntityValue"));
 
                 // Utility functions
-                lua.RegisterFunction("__csharp_drop_card", this, typeof(API).GetMethod("drop_card"));
                 lua.RegisterFunction("__csharp_convert_to_entity", this, typeof(API).GetMethod("__csharp_convert_to_entity"));
-                lua.RegisterFunction("__csharp_do_attack", this, typeof(API).GetMethod("attack"));
+
+                // Function for creating actions (returned by turn_action function)
+                lua.RegisterFunction("__csharp_play_card", this, typeof(API).GetMethod("PlayCard"));
+                lua.RegisterFunction("__csharp_attack_enemy", this, typeof(API).GetMethod("AttackEnemy"));
                 
                 Log.log("Loading Main.lua...");
                 lua.DoFile(lua_script_path + "Main.lua");
@@ -65,6 +67,40 @@ namespace HearthstoneBot
                 Log.error(e.ToString());
             }
             Log.log("Scripts loaded constructed");
+        }
+
+
+        /**
+         * Returns a list of actions to play a card from your hand.
+         */
+        public LuaTable PlayCard(Card card)
+        {
+            LuaTable tab = CreateTable();
+            tab[1] = new CardAction(card, true);
+            tab[2] = new CardAction(card, false);
+            return tab;
+        }
+
+        /**
+         * Performs the action and returns the time to wait before performing the next action.
+         */
+        public int PerformAction(Action action)
+        {
+            Log.log("Performing action: " + action);
+            action.perform();
+            Log.log("Performed action: " + action);
+            return action.delay();
+        }
+
+        /**
+         * Returns a list of actions to play a spell or minion card with no target.
+         */
+        public LuaTable AttackEnemy(Card friendly, Card enemy)
+        {
+            LuaTable tab = CreateTable();
+            tab[1] = new AttackAction(friendly);
+            tab[2] = new AttackAction(enemy);
+            return tab;
         }
 
         private LuaTable CreateTable()
@@ -99,6 +135,36 @@ namespace HearthstoneBot
             }
 
             return list;
+        }
+
+        /**
+         * Converts an LUA table where each item is another LUA table containing actions into a flat list of actions.
+         */
+        private List<Action> TableToActions(LuaTable tab)
+        {
+            List<Action> actions = new List<Action>();
+
+            for(int i=1; ; i++)
+            {
+                LuaTable item = tab[i] as LuaTable;
+                if (item == null)
+                {
+                    break;
+                }
+
+                for (int j=1; ; j++)
+                {
+                    Action action = item[j] as Action;
+                    if (action == null)
+                    {
+                        break;
+                    }
+
+                    actions.Add(action);
+                }
+            }
+
+            return actions;
         }
 
         public LuaTable getCards(string where)
@@ -238,81 +304,49 @@ namespace HearthstoneBot
             }
         }
 
-        public bool was_critical_pause_requested()
+        /**
+         * Call the LUA turn method to decide what actions to take.
+         */
+        public List<Action> turn(List<Card> cards)
         {
-            bool critical_puase_requested = (bool) lua["__critical_pause"];
-            lua["__critical_pause"] = false;
-            return critical_puase_requested;
-        }
+            LuaFunction f = lua.GetFunction("turn");
+            if (f == null)
+            {
+                throw new Exception("Failed to find the LUA function: turn_action");
+            }
 
-        public bool was_end_turn_requested()
-        {
-            bool end_turn_requested = (bool) lua["__end_turn"];
-            lua["__end_turn"] = false;
-            return end_turn_requested;
-        }
+            // Call the LUA funciton and get teh results
+            object[] results = f.Call(cards);
 
-        public void run()
-        {
-            try
+            // Get teh first result as an LUA table
+            LuaTable table = results[0] as LuaTable;
+            if (table == null)
             {
-                LuaFunction f = lua.GetFunction("turn_start");
-                if(f == null)
-                {
-                    Log.error("Lua function not found!");
-                    return;
-                }
-                object[] args = f.Call();
-                string error = (string) args[0];
-                if(error != null)
-                {
-                    Log.error("Internal Lua Exception");
-                    Log.error(error);
-                }
+                throw new Exception("Failed to get results from LUA function: turn_action");
             }
-            catch(LuaException e)
-            {
-                Log.error("EXCEPTION");
-                Log.error(e.ToString());
-                Log.error(e.Message);
-            }
-            catch(Exception e)
-            {
-                Log.error(e.ToString());
-            }
+            
+            // Convert the table to a list of actions
+            List<Action> actions = TableToActions(table);
+            return actions;
         }
 
         public List<Card> mulligan(List<Card> cards)
         {
-            try
+            LuaFunction f = lua.GetFunction("mulligan");
+            if(f == null)
             {
-                LuaFunction f = lua.GetFunction("mulligan");
-                if(f == null)
-                {
-                    Log.log("Lua function not found!");
-                    return null;
-                }
-                LuaTable argument = CardListToTable(cards);
-                object[] args = f.Call(argument);
-                LuaTable replace = args[0] as LuaTable;
-                if(replace != null)
-                {
-                    List<Card> replace_list = TableToCardList(replace);
-                    return replace_list;
-                }
-                Log.log("NO VALID RETURN TYPE");
+                throw new Exception("Failed to find the LUA function: mulligan");
             }
-            catch(LuaException e)
+            LuaTable argument = CardListToTable(cards);
+            object[] results = f.Call(argument);
+            LuaTable replace = results[0] as LuaTable;
+            if (replace == null)
             {
-                Log.error("EXCEPTION");
-                Log.error(e.ToString());
-                Log.error(e.Message);
+                throw new Exception("Failed to get results from LUA function: mulligan");
             }
-            catch(Exception e)
-            {
-                Log.error(e.ToString());
-            }
-            return null;
+
+            List<Card> replace_list = TableToCardList(replace);
+            return replace_list;
         }
 
         public Entity __csharp_convert_to_entity(Card c)
@@ -330,14 +364,14 @@ namespace HearthstoneBot
             return GameState.Get().GetFirstOpponentPlayer(getOurPlayer());
         }
 
-		public void attack(Card c)
+		public static void attack(Card c)
 		{
 			Log.log("Attack: " + c.GetEntity().GetName());
             
             PrivateHacker.HandleClickOnCardInBattlefield(c);
 		}
 
-        public bool drop_held_card(int requested_zone_position = 1) 
+        public static bool drop_held_card(int requested_zone_position = 1) 
         {
             try
             {
@@ -351,7 +385,7 @@ namespace HearthstoneBot
             return false;
         }
 
-        public bool drop_held_card_worker(int requested_zone_position)
+        public static bool drop_held_card_worker(int requested_zone_position)
         {
             PegCursor.Get().SetMode(PegCursor.Mode.STOPDRAG);
 
@@ -492,7 +526,7 @@ namespace HearthstoneBot
             return true;
         }
 
-		public bool drop_card(Card c, bool pickup)
+		public static bool drop_card(Card c, bool pickup)
 		{
 			Log.log("Dropped card: " + c.GetEntity().GetName());
 

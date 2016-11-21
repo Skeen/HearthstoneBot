@@ -51,12 +51,12 @@ local nuke_hero = function()
     for i,card in ipairs(battlefield_cards) do
         local entity = ConvertCardToEntity(card)
         local can_attack = canEntityAttack(entity)
-
         if (can_attack) then
-            local enemy_hero_card = GetCard(EnemyHero)
-            DoAttack(card, enemy_hero_card)
+            return {AttackEnemy(card, GetCard(EnemyHero))}
         end
     end
+	
+	return {}
 end
 --[[
 local get_enemy_tanks = function()
@@ -122,26 +122,25 @@ local eliminate_tanks = function()
             end
 
             if (best_attacker ~= nil) then
-                DoAttack(best_attacker, enemy_card)
-                return true
+                return {AttackEnemy(best_attacker, enemy_card)}
             elseif (#our_attackers ~= 0) then
                 best_attacker = table.remove(our_attackers, 1)
-                DoAttack(best_attacker, enemy_card)
-                return true
-            else
-                return false;
+                return {AttackEnemy(best_attacker, enemy_card)}
             end
         end
     end
-    return false
+    return {}
 end
 
 local throw_random_minion = function()
-    
-    local cards_on_hand = GetCards(Hand)
+    -- Check if the battlefield is full
+	if num_battlefield_minions() >= 7 then
+	    return {}
+	end
+
     local minion_cards = {}
     -- Find all minion cards
-    for i,card in ipairs(cards_on_hand) do
+    for i,card in ipairs(GetCards(Hand)) do
         local entity = ConvertCardToEntity(card)
         local is_minion = IsMinion(entity)
         if is_minion then
@@ -151,7 +150,7 @@ local throw_random_minion = function()
     
     --print_to_log(#minion_cards .. " minions on hand")
     -- Find the most expensive one, we can throw down
-    local avaiable_crystals = GetCrystals(OurHero)
+    local num_crystals = GetCrystals(OurHero)
 
     --print_to_log("crystal")
     local most_expensive_card = nil
@@ -165,7 +164,7 @@ local throw_random_minion = function()
         local is_tank = HasTaunt(entity)
         --print_to_log("card cost = " .. card_cost)
         
-        if((card_cost > most_expensive_card_cost) and (card_cost <= avaiable_crystals)) then
+        if((card_cost > most_expensive_card_cost) and (card_cost <= num_crystals)) then
             if (prefer_tank_minions == true) and (most_expensive_card_is_tank == true) and (is_tank == false) then
                 -- We don't want this, as this card is not a tank, so let's do nothing
             else
@@ -177,15 +176,18 @@ local throw_random_minion = function()
             end
         end
     end
+
+	-- Build list of minions to play
+	minions = {}
+
     --print_to_log("post loop crystal")
     -- We found a card!
     if most_expensive_card ~= nil then
         print_to_log("playable card cost: " .. most_expensive_card_cost)
-        DropCard(most_expensive_card)
-        return true
+        table.insert(minions, PlayCard(most_expensive_card))
     end
-    --print_to_log("no playable card")
-    return false
+
+    return minions
 end
 
 -- Only for non-targeted
@@ -210,62 +212,61 @@ end
 --]]
 
 local non_target_spell = function()
-    local cards_on_hand = GetCards(Hand)
-    local spell_cards = {}
-    -- Find all minion cards
-    for i,card in ipairs(cards_on_hand) do
+
+    -- Get available crystals
+    local num_crystals = GetCrystals(OurHero)
+
+    -- Find a spell card we can cast
+    for i,card in ipairs(GetCards(Hand)) do
         local entity = ConvertCardToEntity(card)
-        local is_minion = IsSpell(entity)
-        if is_minion then
-            table.insert(spell_cards, card)
+        if IsSpell(entity) then
+            local card_cost = GetCost(entity)
+            if(card_cost <= num_crystals) then
+            	return {PlayCard(card)}
+            end
         end
     end
 
-    print_to_log(#spell_cards .. " spells on hand")
-    local avaiable_crystals = GetCrystals(OurHero)
-
-    for i,card in ipairs(spell_cards) do
-        local entity = ConvertCardToEntity(card)
-        local card_cost = GetCost(entity)
-
-        if(card_cost <= avaiable_crystals) then
-            DropCard(card)
-            return true
-        end
-    end
-    return false
+    return {}
 end
 
--- Do AI, returns nothing, takes nothing
-turn_start_function = function()
+-- Return a list of actions to perform.  Turn is ended when no actions are returned here.
+-- If actions are returned, the method will be invoked again after actions are performed.
+function choose_turn_actions(cards)
 
-    -- Try to run the AI 3 times, note this is a hacky fix
-    -- TODO: Do it the right way
-    for i=0,3 do
-        print_to_log("AI started" .. i)
+    print_to_log("Determining next turn action")
 
-        -- Use all spells / secrets
-        while non_target_spell() do
-        end
-        
-        -- Throw all minions
-        while num_battlefield_minions() < 7 and throw_random_minion() do
-        end
-
-        -- Keep killing tanks, while we're able to
-        while eliminate_tanks() do
-        end
-
-        nuke_hero();
-
-        print_to_log("AI ended" .. i);
+    -- Check if there is a spell to cast
+    spell_cards = non_target_spell()
+    if next(spell_cards) ~= nil then
+        return spell_cards
     end
-    print_to_log("End of Turn Called");
+
+    -- Check if there is a minion to drop
+    minion_cards = throw_random_minion()
+    if next(minion_cards) ~= nil then
+        return minion_cards
+    end
+
+	-- Destroy minions with taunt
+	tank_cards = eliminate_tanks()
+	if next(tank_cards) ~= nil then
+		return tank_cards
+	end
+
+	-- Attack enemy hero
+	nuke_actions = nuke_hero()
+	if next(nuke_actions) ~= nil then
+		return nuke_actions
+	end
+
+    -- No more actions to perform
+    return {}
 end
 
 -- Mulligan function, should not call any critical pause functions
 -- Returns a list of cards to be replaced
-function do_mulligan(cards)
+function choose_mulligan_cards(cards)
 
     replace = {}
     

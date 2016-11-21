@@ -63,7 +63,7 @@ namespace HearthstoneBot
             }
             catch(Exception e)
             {
-                Log.error("Exception: Handling pending events");
+                Log.error("Failed to handle events with server socket: " + e.Message);
                 Log.error(e.ToString());
             }
 
